@@ -56,8 +56,8 @@ const Settings = () => {
       >
         Settings
       </Typography>
-      <form onSubmit={handleFormSubmit}>
-        {/* Profile Information Section */}
+      {/* <form onSubmit={handleFormSubmit}>
+        // Profile Information Section
         <Typography
           variant="h6"
           sx={{
@@ -99,7 +99,7 @@ const Settings = () => {
           </Grid>
         </Grid>
 
-        {/* Change Password Section */}
+        // Change Password Section
         <Typography
           variant="h6"
           sx={{
@@ -128,7 +128,7 @@ const Settings = () => {
           </Grid>
         </Grid>
 
-        {/* Notification Preferences Section */}
+        // Notification Preferences Section
         <Typography
           variant="h6"
           sx={{
@@ -169,7 +169,7 @@ const Settings = () => {
           </Grid>
         </Grid>
 
-        {/* Submit Button */}
+        // Submit Button 
         <Button
           variant="contained"
           color="primary"
@@ -184,7 +184,7 @@ const Settings = () => {
         >
           Save Changes
         </Button>
-      </form>
+      </form> */}
     </Box>
     </DashboardLayout>
   );

@@ -7,18 +7,22 @@ import {
   Badge,
   Menu,
   MenuItem,
+  ListItemIcon,
   Typography,
   Box,
 } from "@mui/material";
+import { AccountCircle, VideoLibrary, Logout } from "@mui/icons-material";
 import {
   Menu as MenuIcon,
   Notifications,
   Add,
   Search,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router";
 
 const Navbar = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const navigate=useNavigate()
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -97,7 +101,9 @@ const Navbar = ({ toggleSidebar }) => {
           </IconButton>
 
           {/* Add Action */}
-          <IconButton color="primary">
+          <IconButton onClick={()=>{
+            navigate("/studio/upload-video")
+          }} color="primary">
             <Add />
           </IconButton>
 
@@ -111,49 +117,75 @@ const Navbar = ({ toggleSidebar }) => {
           </IconButton>
 
           <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            sx={{
-              mt: 2,
-              "& .MuiPaper-root": {
-                borderRadius: 3,
-                boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
-                padding: "10px 0",
-              },
-            }}
-          >
-            <MenuItem
-              onClick={handleMenuClose}
-              sx={{
-                fontFamily: "Velyra, sans-serif",
-                color: "#007BFF",
-                padding: "10px 20px",
-              }}
-            >
-              My Profile
-            </MenuItem>
-            <MenuItem
-              onClick={handleMenuClose}
-              sx={{
-                fontFamily: "Velyra, sans-serif",
-                color: "#007BFF",
-                padding: "10px 20px",
-              }}
-            >
-              Go to Studio
-            </MenuItem>
-            <MenuItem
-              onClick={handleMenuClose}
-              sx={{
-                fontFamily: "Velyra, sans-serif",
-                color: "#FF3D00",
-                padding: "10px 20px",
-              }}
-            >
-              Sign Out
-            </MenuItem>
-          </Menu>
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={handleMenuClose}
+      sx={{
+        mt: 2,
+        "& .MuiPaper-root": {
+          borderRadius: 3,
+          boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+          padding: "10px 0",
+        },
+      }}
+    >
+      <MenuItem
+        onClick={handleMenuClose}
+        sx={{
+          fontFamily: "Velyra, sans-serif",
+          color: "#007BFF",
+          padding: "10px 20px",
+        }}
+      >
+        <ListItemIcon
+          sx={{
+            minWidth: "40px", // Ensures consistent spacing for icons
+            color: "#007BFF",
+          }}
+        >
+          <AccountCircle />
+        </ListItemIcon>
+        My Profile
+      </MenuItem>
+      <MenuItem
+        onClick={()=>{
+          navigate("/studio/dashboard")
+        }}
+        sx={{
+          fontFamily: "Velyra, sans-serif",
+          color: "#007BFF",
+          padding: "10px 20px",
+        }}
+      >
+        <ListItemIcon
+          sx={{
+            minWidth: "40px",
+            color: "#007BFF",
+          }}
+        >
+          <VideoLibrary />
+        </ListItemIcon>
+        Go to Studio
+      </MenuItem>
+      <MenuItem
+        onClick={handleMenuClose}
+        sx={{
+          fontFamily: "Velyra, sans-serif",
+          color: "#FF3D00",
+          padding: "10px 20px",
+        }}
+      >
+        <ListItemIcon
+          sx={{
+            minWidth: "40px",
+            color: "#FF3D00",
+          }}
+        >
+          <Logout />
+        </ListItemIcon>
+        Sign Out
+      </MenuItem>
+    </Menu>
         </Box>
       </Toolbar>
     </AppBar>

@@ -22,7 +22,7 @@ const Dashboard = () => {
         Welcome to your Dashboard
       </Typography>
       
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* <Grid container spacing={3} sx={{ mb: 4 }}>
         {stats.map((stat) => (
           <Grid item xs={12} md={4} key={stat.title}>
             <Card
@@ -46,7 +46,7 @@ const Dashboard = () => {
         ))}
       </Grid>
 
-      {/* Recent Uploads */}
+      // Recent Uploads 
       <Typography variant="h5" sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 2 }}>
         Recent Uploads
       </Typography>
@@ -70,7 +70,8 @@ const Dashboard = () => {
           </Box>
         ))}
       </Box>
-    </Box>
+      */}
+    </Box> 
     </DashboardLayout>
   );
 };

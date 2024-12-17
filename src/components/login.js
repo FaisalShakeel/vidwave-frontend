@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Snackbar, Alert, CircularProgress } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
+  const navigate=useNavigate()
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,18 +21,24 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://127.0.0.1:5000/login", { emailAddress, passWord: password });
+      const response = await axios.post("http://127.0.0.1:5000/users/login", { EMailAddress:emailAddress, passWord: password });
+      console.log("Response from backend",response.data)
 
       if (response.data.success) {
-        localStorage.setItem("UID", response.data.user._id);
-        localStorage.setItem("EMailAddress", response.data.user.EMailAddress);
-        localStorage.setItem("passWord", response.data.user.passWord);
-        localStorage.setItem("profilePhotoUrl", response.data.user.profilePhotoUrl);
-
+        console.log("Storing token")
+        localStorage.setItem("token",response.data.token)
         setSnackbar({ open: true, message: "You are successfully logged in", severity: "success" });
-        window.location.href = "/home"; // Redirect after successful login
-      } else {
-        setSnackbar({ open: true, message: "Invalid email address or password", severity: "error" });
+        setTimeout(()=>{
+        navigate("/") // Redirect after successful login
+
+        },1500)
+      } else if(response.data.success==false &&response.data.message=="Incorrect Password") {
+        setSnackbar({ open: true, message: "Incorrect Password", severity: "error" });
+      }
+      else if(response.data.success==false &&response.data.message=="NotRegistered") {
+        setSnackbar({ open: true, message: "Not Registered!", severity: "error" });
+
+
       }
     } catch (error) {
       setSnackbar({ open: true, message: "Error occurred during login", severity: "error" });

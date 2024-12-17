@@ -66,7 +66,7 @@ const Analytics = () => {
   return (
     <DashboardLayout>
     <Box>
-      {/* Page Title */}
+      
       <Typography
         variant="h4"
         sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 4 }}
@@ -75,6 +75,7 @@ const Analytics = () => {
       </Typography>
 
       {/* Key Metrics */}
+      {/*
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
           <Card
@@ -155,9 +156,9 @@ const Analytics = () => {
         </Grid>
       </Grid>
 
-      {/* Charts */}
+    //Charts
       <Grid container spacing={4}>
-        {/* Views Over Time (Bar Chart) */}
+        // Views Over Time (Bar Chart)
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -168,7 +169,7 @@ const Analytics = () => {
           <Bar data={barChartData} options={{ responsive: true }} />
         </Grid>
 
-        {/* Subscribers Growth (Line Chart) */}
+        // Subscribers Growth (Line Chart) 
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -179,7 +180,7 @@ const Analytics = () => {
           <Line data={lineChartData} options={{ responsive: true }} />
         </Grid>
 
-        {/* Audience Demographics (Doughnut Chart) */}
+        // Audience Demographics (Doughnut Chart) 
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -190,7 +191,7 @@ const Analytics = () => {
           <Doughnut data={doughnutChartData} options={{ responsive: true }} />
         </Grid>
 
-        {/* Additional Section */}
+        // Additional Section 
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -224,7 +225,7 @@ const Analytics = () => {
             )}
           </Box>
         </Grid>
-      </Grid>
+      </Grid> */}
     </Box>
     </DashboardLayout>
   );
