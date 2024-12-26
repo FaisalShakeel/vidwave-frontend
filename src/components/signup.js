@@ -16,10 +16,12 @@ import { storage } from "../firebaseConfig";
 import { uploadBytesResumable, getDownloadURL, ref } from "firebase/storage";
 import EditIcon from "@mui/icons-material/Edit";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function SignUp() {
+function SignUp() 
+{
+  const navigate=useNavigate()
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
@@ -104,6 +106,10 @@ function SignUp() {
       
 
         setSnackbar({ open: true, message: "Account created successfully!", severity: "success" });
+        setTimeout(()=>{
+        navigate("/")
+
+        },1000)
         
       } else if (response.data.message === "AlreadyRegistered") {
         setSnackbar({ open: true, message: "Email is already taken!", severity: "warning" });

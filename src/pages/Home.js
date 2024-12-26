@@ -14,8 +14,10 @@ import {
   Alert,
 } from "@mui/material";
 import moment from "moment";
+import { useNavigate } from "react-router";
 
 const HomePage = () => {
+  const navigate=useNavigate()
   const categories = ["All", "Trending", "Music", "Gaming", "Sports", "News", "Comedy", "Tech"];
 
   const [videos, setVideos] = useState([]); // To store the fetched videos
@@ -43,6 +45,7 @@ const HomePage = () => {
 
     fetchVideos();
   }, []);
+
 
   // Filtered videos based on category
   const filteredVideos =
@@ -92,7 +95,9 @@ const HomePage = () => {
         <Grid container spacing={3} sx={{ padding: 3, backgroundColor: "#fff" }}>
           {filteredVideos.length > 0 ? (
             filteredVideos.map((video, index) => (
-              <Grid item xs={12} sm={12} md={6} lg={6} xl={4} key={video._id || index}>
+              <Grid onClick={()=>{
+                navigate(`/watch/${video._id}`)
+              }} item xs={12} sm={12} md={6} lg={6} xl={4} key={video._id || index}>
                 <Card
                   sx={{
                     boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
@@ -159,7 +164,7 @@ const HomePage = () => {
                         variant="body2"
                         sx={{ fontFamily: "Velyra", color: "#555", fontSize: "0.875rem" }}
                       >
-                        {video.viewedByArray?.length || 0} views
+                        {video.viewedBy?.length || 0} views
                       </Typography>
                       <Typography
                         variant="body2"

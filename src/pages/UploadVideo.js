@@ -15,6 +15,7 @@ import {
   IconButton,
   Select,
   MenuItem,
+  Alert,
 } from "@mui/material";
 import { ArrowBack, CloudUpload, Edit } from "@mui/icons-material";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -44,12 +45,7 @@ const UploadVideo = () => {
   const [loadingThumbnail, setLoadingThumbnail] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [newTag, setNewTag] = useState('');
-  const availableTags = ["Tech", "Comedy", "Education", "Gaming", "Vlogs", "Tutorials", "Music"]; // Predefined tag options
-
-  const handleTagInputChange = (event, value) => {
-    setNewTag(value); // Update the value as user types
-
-  };
+ 
   const predefinedTags = [
     'Technology', 'Music', 'Gaming', 'Education', 
     'Comedy', 'Sports', 'Travel', 'Cooking', 
@@ -174,32 +170,59 @@ const formatTime = (durationInSeconds) => {
   };
 
   const handleUpload = async() => {
-    if (!videoTitle || !videoDescription || !videoCategory || !thumbnailURL || !videoURL) {
+    if (!videoTitle || !videoDescription || !videoCategory) {
       setErrorMessage("Please fill out all fields");
+      setTimeout(()=>{
+        setErrorMessage("")
+      },1500)
       return;
+    }
+    if(selectedTags.length==0){
+      setErrorMessage("Please Add At Least One Tag")
+      setTimeout(()=>{
+        setErrorMessage("")
+      },1500)
+      return ;
     }
     if(thumbnailURL.length==0)
     {
-      setErrorMessage("Thumbnail Is Missing!")
+      setErrorMessage("Please Upload  Thumbnail!")
+      setTimeout(()=>{
+        setErrorMessage("")
+      },1500)
       return ;
     }
     if(videoURL.length==0){
-      setErrorMessage("Video Is Missing!")
+      setErrorMessage("Please Upload Video!")
+      setTimeout(()=>{
+        setErrorMessage("")
+      },1500)
       return ;
     }
     setUploading(true);
     try{
-      const response=await axios.post("http://localhost:5000/videos/upload-video",{title:videoTitle,description:videoDescription,category:videoCategory,tags:videoTags,thumbnailUrl:thumbnailURL,url:videoURL},{headers:{"Authorization":localStorage.getItem("token")}})
+      console.log("API Calling")
+      const response=await axios.post("http://localhost:5000/videos/upload-video",{title:videoTitle,description:videoDescription,category:videoCategory,tags:selectedTags,thumbnailUrl:thumbnailURL,url:videoURL},{headers:{"Authorization":localStorage.getItem("token")}})
+      console.log("Reponese",response.data)
       if(response.data.success){
         setSuccessMessage("Successfully Uploaded!")
         setTimeout(()=>{
           navigate("/")
         },1000)
       }
+      else{
+        setErrorMessage(response.data.message)
+        setTimeout(()=>{
+          setErrorMessage("")
+        },1200)
+      }
     
     }
     catch(e){
-      setErrorMessage(e.response.data.message?e.response.data.message:e.message)
+      setErrorMessage(e.response?e.response.data.message:e.message)
+      setTimeout(()=>{
+        setErrorMessage("")
+      },1500)
 
     }
     finally{
@@ -282,6 +305,10 @@ const formatTime = (durationInSeconds) => {
     <MenuItem value="Comedy" sx={{fontFamily:"Velyra"}}>Comedy</MenuItem>
     <MenuItem value="Education" sx={{fontFamily:"Velyra"}}>Education</MenuItem>
     <MenuItem value="Gaming" sx={{fontFamily:"Velyra"}}>Gaming</MenuItem>
+    <MenuItem value="Sports" sx={{fontFamily:"Velyra"}}>Sports</MenuItem>
+    <MenuItem value="News" sx={{fontFamily:"Velyra"}}>News</MenuItem>
+    <MenuItem value="Music" sx={{fontFamily:"Velyra"}}>Music</MenuItem>
+    <MenuItem value="Other" sx={{fontFamily:"Velyra"}}>Other</MenuItem>
   </Select>
 </FormControl>
 <div className="w-full font-velyra">
@@ -412,7 +439,7 @@ const formatTime = (durationInSeconds) => {
         height: "200px",
       }}
     >
-      <CircularProgress size={60} sx={{ color: "#007BFF" }} />
+      <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
     </Box>
   ) : thumbnailURL ? (
     // Thumbnail Display
@@ -517,7 +544,7 @@ const formatTime = (durationInSeconds) => {
         height: "200px",
       }}
     >
-      <CircularProgress size={60} sx={{ color: "#007BFF" }} />
+      <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
     </Box>
   ) : videoURL ? (
     // Video Display
@@ -597,8 +624,17 @@ const formatTime = (durationInSeconds) => {
             {uploading ? <CircularProgress size={24} /> : "Upload Video"}
           </Button>
 
-          {errorMessage && <Snackbar open={true} severity message={errorMessage} />}
-          {successMessage && <Snackbar open={true} message={successMessage} />}
+          {errorMessage && <Snackbar open={true} severity autoHideDuration={2000} >
+            <Alert severity="error" sx={{fontFamily:"Velyra"}}>
+ {errorMessage}
+            </Alert>
+            </Snackbar>}
+          {successMessage && <Snackbar open={true} autoHideDuration={2000} >
+            <Alert severity="success" sx={{fontFamily:"Velyra"}}>
+              {successMessage}
+
+            </Alert>
+            </Snackbar>}
         </Box>
       </Box>
     </DashboardLayout>
