@@ -18,9 +18,13 @@ import {
   ListItemText,
   ListItemIcon,
   TextField,
-  Divider
+  Divider,
+  FormControl,
+  InputLabel
 } from "@mui/material";
 import ReactPlayer from'react-player';
+import {toast,ToastContainer} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
 import { 
   ThumbUp, 
   SaveAlt, 
@@ -42,93 +46,136 @@ const Watch = () => {
   const [relatedVideos, setRelatedVideos] = useState([]);
   const [uploadedBy, setUploadedBy] = useState({});
   const [loading, setLoading] = useState(true);
+  const [playlistsLoading, setPlaylistsLoading] = useState(true); // New state for playlist loading
   const [error, setError] = useState(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
   const [newPlaylistDialogOpen, setNewPlaylistDialogOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false); // Track play state
   const navigate = useNavigate();
-   
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState("");
+  const [selectedPlaylistName, setSelectedPlaylistName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isUnsaving, setIsUnsaving] = useState(false);
+  
   const handleExpandReplies = (index) => {
     setExpandedComments((prev) => ({
       ...prev,
       [index]: !prev[index],
     }));
   };
-
+  
+  const isAlreadySaved = () => {
+    if (userPlaylists.length === 0) return false; // If playlists are empty, return immediately.
+  
+    const _isSaved = userPlaylists.some((playlist) => {
+      if (playlist.videos.includes(id)) {
+        setSelectedPlaylistId(playlist._id);
+        setSelectedPlaylistName(playlist.title);
+        return true;
+      }
+      return false;
+    });
+  
+    setIsSaved(_isSaved);
+    return _isSaved;
+  };
+  
   const handleNewCommentChange = (e) => setNewComment(e.target.value);
-
+  
   const handleSaveClick = () => {
     setPlaylistDialogOpen(true);
-    // Fetch user playlists here
     fetchUserPlaylists();
   };
-
+  
   const fetchUserPlaylists = async () => {
+    setPlaylistsLoading(true); // Set playlistsLoading to true while fetching
     try {
-      const response = await axios.get(
-        `http://localhost:5000/playlists/user?token=${localStorage.getItem("token")}`
-      );
+      const response = await axios.get("http://localhost:5000/playlists/getmyplaylists", {
+        headers: { Authorization: localStorage.getItem("token") },
+      });
       if (response.data.success) {
         setUserPlaylists(response.data.playlists);
       }
     } catch (error) {
       console.error("Error fetching playlists:", error);
+    } finally {
+      setPlaylistsLoading(false); // Set playlistsLoading to false after fetching
     }
   };
-
+  
   const handleCreateNewPlaylist = async () => {
+    setIsCreatingPlaylist(true);
     try {
       const response = await axios.post(
         "http://localhost:5000/playlists/create",
         {
-          name: newPlaylistName,
-          videoId: id
+          title: newPlaylistName,
+          description: newPlaylistDescription,
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          headers: { Authorization: localStorage.getItem("token") },
         }
       );
       if (response.data.success) {
+        toast.success(response.data.message, { style: { fontFamily: "Velyra" } });
         setNewPlaylistDialogOpen(false);
         setPlaylistDialogOpen(false);
         setNewPlaylistName("");
-        // Show success message
+        setUserPlaylists([...userPlaylists, response.data.playlist]);
+      } else {
+        toast.error(response.data.message, { style: { fontFamily: "Velyra" } });
       }
     } catch (error) {
       console.error("Error creating playlist:", error);
+      toast.error(error.response ? error.response.data.message : error.message,{style:{fontFamily:"Velyra"}});
+    } finally {
+      setIsCreatingPlaylist(false);
     }
   };
-
+  
   const handleAddToPlaylist = async (playlistId) => {
+    setIsSaving(true);
+    setIsUnsaving(true);
     try {
       const response = await axios.post(
-        `http://localhost:5000/playlists/${playlistId}/add`,
+        `http://localhost:5000/playlists/addtoplaylist`,
         {
-          videoId: id
+          videoId: id,
+          playlistId,
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          headers: { Authorization: localStorage.getItem("token") },
         }
       );
       if (response.data.success) {
+        toast.success(response.data.message, { style: { fontFamily: "Velyra" } });
         setPlaylistDialogOpen(false);
-        // Show success message
+        setIsSaved(!isSaved);
+      } else {
+        toast.error(response.data.message, { style: { fontFamily: "Velyra" } });
+        setPlaylistDialogOpen(false);
       }
-    } catch (error) {
-      console.error("Error adding to playlist:", error);
+    } catch (e) {
+      console.error("Error adding to playlist:", e);
+      toast.error(e.response ? e.response.data.message : e.message, { style: { fontFamily: "Velyra" } });
+    } finally {
+      setIsSaving(false);
+      setIsUnsaving(false);
     }
   };
-
+  
   const getVideoDetails = async () => {
     try {
       const response = await axios.get(
         `http://localhost:5000/videos/getvideo/${id}?token=${localStorage.getItem("token")}`
       );
       if (response.data.success) {
-        console.log("Response",response.data.video)
         setVideo(response.data.video);
         setUploadedBy(response.data.uploadedBy);
         setRelatedVideos(response.data.relevantVideos);
@@ -141,10 +188,19 @@ const Watch = () => {
       setLoading(false);
     }
   };
-
+  
+  // Run isAlreadySaved only when playlists are loaded
+  useEffect(() => {
+    if (!playlistsLoading) {
+      isAlreadySaved();
+    }
+  }, [playlistsLoading, userPlaylists]);
+  
   useEffect(() => {
     getVideoDetails();
+    fetchUserPlaylists();
   }, [id]);
+  
 
   if (loading) {
     return (
@@ -171,6 +227,7 @@ const Watch = () => {
   return (
     <Layout>
 <Box sx={{ padding: 2, overflowX: "hidden" }}>
+  <ToastContainer/>
   <Button
     startIcon={<ArrowBack />}
     onClick={() => navigate(-1)}
@@ -295,12 +352,20 @@ const Watch = () => {
                     Like {video.likedBy?.length || 0}
                   </Button>
                   <Button
+                  disabled={isUnsaving}
                     startIcon={<SaveAlt />}
                     sx={{ fontFamily: "Velyra", '&:hover': { backgroundColor: "#e7f3ff" } }}
                     color="primary"
-                    onClick={handleSaveClick}
+                    onClick={()=>{
+                      if(isSaved){
+                        handleAddToPlaylist(selectedPlaylistId)
+                      }
+                      else{
+                        handleSaveClick()
+                      }
+                    }}
                   >
-                    Save
+                    {isSaved?isUnsaving?"Unsaving":"Unsave":"Save"}
                   </Button>
                 </Box>
 
@@ -564,31 +629,97 @@ const Watch = () => {
             Save to Playlist
           </DialogTitle>
           <DialogContent>
-            <List sx={{ width: '100%' }}>
-              {userPlaylists.map((playlist) => (
-                <ListItem 
-                  key={playlist.id}
-                  button
-                  onClick={() => handleAddToPlaylist(playlist.id)}
-                  sx={{
-                    borderRadius: "8px",
-                    '&:hover': {
-                      backgroundColor: "#f5f5f5"
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <Folder />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={playlist.name}
-                    secondary={`${playlist.videos?.length || 0} videos`}
-                    primaryTypographyProps={{ fontFamily: "Velyra" }}
-                    secondaryTypographyProps={{ fontFamily: "Velyra" }}
-                  />
-                </ListItem>
-              ))}
-            </List>
+          <List
+  sx={{
+    width: '100%',
+    maxHeight: '400px', // Set a maximum height for scrolling
+    overflowY: 'auto', // Enable vertical scrolling
+    '&::-webkit-scrollbar': {
+      width: '6px', // Thin scrollbar
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: '#d3d3d3', // Light gray scrollbar thumb
+      borderRadius: '10px', // Rounded scrollbar
+    },
+    '&::-webkit-scrollbar-thumb:hover': {
+      backgroundColor: '#b0b0b0', // Slightly darker on hover
+    },
+  }}
+>
+  {userPlaylists.map((playlist) => {
+    const isSelected =
+      playlist.title === selectedPlaylistName &&
+      playlist._id === selectedPlaylistId;
+
+    const truncatedDescription =
+      playlist.description?.length > 100
+        ? `${playlist.description.substring(0, 100)}...`
+        : playlist.description;
+
+    return (
+      <ListItem
+        key={playlist.id}
+        button
+        onClick={() => {
+          setSelectedPlaylistName(playlist.title);
+          setSelectedPlaylistId(playlist._id);
+        }}
+        sx={{
+          borderRadius: '8px',
+          backgroundColor: isSelected ? '#add8e6' : 'transparent', // Slightly darker light blue for selected
+          color: isSelected ? 'white' : 'inherit',
+          '&:hover': {
+            backgroundColor: isSelected ? '#add8e6' : '#f5f5f5',
+          },
+          transition: 'background-color 0.3s, color 0.3s',
+          padding: '12px',
+          fontWeight: isSelected ? 'bold' : 'normal',
+          display: 'flex',
+          justifyContent: 'space-between', // Align items to left and right
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <ListItemIcon>
+            <Folder sx={{ color: isSelected ? 'white' : 'inherit' }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={playlist.title}
+            secondary={
+              <Typography
+                variant="body2"
+                sx={{
+                  color: isSelected ? 'white' : 'inherit',
+                  fontFamily: 'Velyra',
+                }}
+              >
+                {truncatedDescription || 'No description available'}
+              </Typography>
+            }
+            primaryTypographyProps={{
+              fontFamily: 'Velyra',
+              fontWeight: isSelected ? 'bold' : 'normal',
+            }}
+            secondaryTypographyProps={{
+              fontFamily: 'Velyra',
+            }}
+          />
+        </Box>
+        <Typography
+          variant="caption"
+          sx={{
+            alignSelf: 'center',
+            color: isSelected ? 'white' : '#666',
+            fontFamily: 'Velyra',
+          }}
+        >
+          {playlist.videos.length} videos
+        </Typography>
+      </ListItem>
+    );
+  })}
+</List>
+
+
             <Divider sx={{ my: 2 }} />
             <Button
               startIcon={<Add />}
@@ -608,63 +739,186 @@ const Watch = () => {
             </Button>
           </DialogContent>
           <DialogActions>
-            <Button 
-              onClick={() => setPlaylistDialogOpen(false)}
+            <Button
+            disabled={isSaving} 
+              onClick={() =>{
+              if(selectedPlaylistId && selectedPlaylistName){
+              handleAddToPlaylist(selectedPlaylistId)
+
+              }
+              else{
+              setPlaylistDialogOpen(false)
+              }
+              }}
               sx={{ fontFamily: "Velyra" }}
             >
-              Cancel
+            {selectedPlaylistId && selectedPlaylistName?isSaving?"Saving":"Save":"Cancel"}
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Create New Playlist Dialog */}
         <Dialog
-          open={newPlaylistDialogOpen}
-          onClose={() => setNewPlaylistDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
+  open={newPlaylistDialogOpen}
+  onClose={() => setNewPlaylistDialogOpen(false)}
+  maxWidth="sm"
+  fullWidth
+>
+  <DialogTitle
+    sx={{
+      fontFamily: "Velyra",
+      textAlign: "center", // Center align the title
+      fontWeight: "bold",
+    }}
+  >
+    Create New Playlist
+  </DialogTitle>
+
+  <Dialog
+  open={newPlaylistDialogOpen}
+  onClose={() => setNewPlaylistDialogOpen(false)}
+  maxWidth="sm"
+  fullWidth
+>
+  <DialogTitle
+    sx={{
+      fontFamily: "Velyra",
+      textAlign: "center",
+      fontWeight: "bold",
+    }}
+  >
+    Create New Playlist
+  </DialogTitle>
+
+  <DialogContent>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 3, // Spacing between fields
+        mt: 2,
+      }}
+    >
+      <FormControl fullWidth>
+        <InputLabel
+          shrink
+          sx={{
+            fontFamily: "Velyra",
+            fontSize: "18px",
+            fontWeight: "bold",
+            color: "#007BFF", // Darker blue color
+          }}
         >
-          <DialogTitle sx={{ fontFamily: "Velyra" }}>
-            Create New Playlist
-          </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Playlist Name"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={newPlaylistName}
-              onChange={(e) => setNewPlaylistName(e.target.value)}
-              sx={{
-                mt: 2,
-                '& .MuiOutlinedInput-root': {
-                  fontFamily: "Velyra"
-                },
-                '& .MuiInputLabel-root': {
-                  fontFamily: "Velyra"
-                }
-              }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button 
-              onClick={() => setNewPlaylistDialogOpen(false)}
-              sx={{ fontFamily: "Velyra" }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateNewPlaylist}
-              variant="contained"
-              disabled={!newPlaylistName.trim()}
-              sx={{ fontFamily: "Velyra" }}
-            >
-              Create
-            </Button>
-          </DialogActions>
-        </Dialog>
+          Title
+        </InputLabel>
+        <Input
+          value={newPlaylistName}
+          inputProps={{ style: { fontFamily: "Velyra" } }}
+          onChange={(e) => setNewPlaylistName(e.target.value)}
+          fullWidth
+          sx={{
+            "&:before": {
+              borderBottom: "3px solid black", // Always bold black
+            },
+            "&:hover:before": {
+              borderBottom: "3px solid black",
+            },
+            "&:after": {
+              borderBottom: "3px solid #007BFF", // Focus state
+            },
+          }}
+        />
+      </FormControl>
+
+      <FormControl fullWidth>
+        <InputLabel
+          shrink
+          sx={{
+            fontFamily: "Velyra",
+            fontSize: "18px",
+            fontWeight: "bold",
+            color: "#007BFF", // Darker blue color
+          }}
+        >
+          Description
+        </InputLabel>
+        <Input
+          value={newPlaylistDescription}
+          onChange={(e) => setNewPlaylistDescription(e.target.value)}
+          multiline
+          rows={4}
+          fullWidth
+          sx={{
+            "&:before": {
+              borderBottom: "3px solid black", // Always bold black
+            },
+            "&:hover:before": {
+              borderBottom: "3px solid black",
+            },
+            "&:after": {
+              borderBottom: "3px solid #007BFF", // Focus state
+            },
+            fontFamily: "Velyra",
+          }}
+        />
+      </FormControl>
+    </Box>
+  </DialogContent>
+
+  <DialogActions>
+    <Button
+      onClick={() => setNewPlaylistDialogOpen(false)}
+      sx={{ fontFamily: "Velyra" }}
+    >
+      Cancel
+    </Button>
+    <Button
+      onClick={() => {
+        handleCreateNewPlaylist();
+      }}
+      variant="contained"
+      disabled={isCreatingPlaylist}
+      sx={{
+        fontFamily: "Velyra",
+        backgroundColor: "#007BFF", // Darker blue
+        "&:hover": {
+          backgroundColor: "#0056b3", // Even darker on hover
+        },
+      }}
+    >
+      {isCreatingPlaylist ? "Creating" : "Create"}
+    </Button>
+  </DialogActions>
+</Dialog>
+
+
+  <DialogActions>
+    <Button
+      onClick={() => setNewPlaylistDialogOpen(false)}
+      sx={{ fontFamily: "Velyra" }}
+    >
+      Cancel
+    </Button>
+    <Button
+      onClick={() => {
+        handleCreateNewPlaylist();
+      }}
+      variant="contained"
+      disabled={isCreatingPlaylist}
+      sx={{
+        fontFamily: "Velyra",
+        backgroundColor: "lightblue",
+        "&:hover": {
+          backgroundColor: "dodgerblue",
+        },
+      }}
+    >
+      {isCreatingPlaylist ? "Creating" : "Create"}
+    </Button>
+  </DialogActions>
+</Dialog>
+
       </Box>
     </Layout>
   );
