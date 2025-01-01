@@ -25,6 +25,7 @@ import {
 import ReactPlayer from'react-player';
 import {toast,ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css';
+import {jwtDecode} from 'jwt-decode'
 import { 
   ThumbUp, 
   SaveAlt, 
@@ -37,7 +38,7 @@ import VideoJS from "react-video-js-player";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout";
 import axios from "axios";
-import VideoPlayer from "../components/VideoPlayer";
+import moment from 'moment'
 const Watch = () => {
   const { id } = useParams();
   const [expandedComments, setExpandedComments] = useState({});
@@ -46,7 +47,7 @@ const Watch = () => {
   const [relatedVideos, setRelatedVideos] = useState([]);
   const [uploadedBy, setUploadedBy] = useState({});
   const [loading, setLoading] = useState(true);
-  const [playlistsLoading, setPlaylistsLoading] = useState(true); // New state for playlist loading
+  const [playlistsLoading, setPlaylistsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
@@ -54,7 +55,7 @@ const Watch = () => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
   const [userPlaylists, setUserPlaylists] = useState([]);
-  const [isPlaying, setIsPlaying] = useState(false); // Track play state
+  const [isPlaying, setIsPlaying] = useState(false);
   const navigate = useNavigate();
   const [selectedPlaylistId, setSelectedPlaylistId] = useState("");
   const [selectedPlaylistName, setSelectedPlaylistName] = useState("");
@@ -62,16 +63,75 @@ const Watch = () => {
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isUnsaving, setIsUnsaving] = useState(false);
-  
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(true); // New state for initial like loading
+  const [isCommenting, setIsCommenting] = useState(false);
+
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [UID, setUID] = useState("");
+  const[alreadySubscribed,setAlreadySubscribed]=useState(false) 
   const handleExpandReplies = (index) => {
     setExpandedComments((prev) => ({
       ...prev,
       [index]: !prev[index],
     }));
   };
+  const[replyingToName,setReplyingToName]=useState("")
+  const[commentId,setCommentId]=useState("")
+  
+  const hasSubscribed = () => {
+    if (!uploadedBy) {
+        console.log("UploadedBy is not defined");
+        return false;
+    }
+
+    console.log("Uploaded By:", uploadedBy);
+
+    // Ensure followers exists and is an array
+    if (!Array.isArray(uploadedBy.followers)) {
+        console.log("Followers is not an array or undefined");
+        return false;
+    }
+
+    const _UID = jwtDecode(localStorage.getItem("token")).id;
+    console.log("Decoded User ID:", _UID);
+
+    const isSubscribed = uploadedBy.followers.includes(_UID);
+    console.log("Is Subscribed:", isSubscribed);
+
+    return isSubscribed;
+};
+
+  
+  const isAlreadyLiked = (likedBy) => {
+    try {
+      const _UID = jwtDecode(localStorage.getItem("token")).id;
+      const _isLiked = likedBy ? likedBy.includes(_UID) : false;
+      return { _UID, _isLiked };
+    } catch (error) {
+      console.error("Error checking like status:", error);
+      return { _UID: null, _isLiked: false };
+    }
+  };
+  
+  useEffect(() => {
+    if (video && video.likedBy) {
+      setIsLikeLoading(true); // Set loading before checking
+      try {
+        const { _UID, _isLiked } = isAlreadyLiked(video.likedBy);
+        setUID(_UID);
+        setIsLiked(_isLiked);
+      } catch (error) {
+        console.error("Error setting initial like state:", error);
+      } finally {
+        setIsLikeLoading(false); // Clear loading after checking
+      }
+    }
+  }, [video]);
   
   const isAlreadySaved = () => {
-    if (userPlaylists.length === 0) return false; // If playlists are empty, return immediately.
+    if (userPlaylists.length === 0) return false;
   
     const _isSaved = userPlaylists.some((playlist) => {
       if (playlist.videos.includes(id)) {
@@ -86,26 +146,126 @@ const Watch = () => {
     return _isSaved;
   };
   
-  const handleNewCommentChange = (e) => setNewComment(e.target.value);
+ 
   
   const handleSaveClick = () => {
     setPlaylistDialogOpen(true);
     fetchUserPlaylists();
   };
+  const replyToComment=async()=>{
+    setIsCommenting(true)
+    try{
+      const response=await axios.post("http://localhost:5000/videos/replytocomment",{videoId:id,commentId,replyText:newComment},{headers:{"Authorization":localStorage.getItem("token")}})
+      if(response.data.success){
+        toast.success(response.data.message,{style:{fontFamily:"Velyra"}})
+        setVideo(response.data.video)
+      setReplyingToName("")
+      setNewComment("")
+      }
+      else{
+        toast.error(response.data.message,{style:{fontFamily:"Velyra"}})
+
+      }
+    }
+    catch(e){
+      toast.error(e.response?e.response.data.message:e.message,{style:{fontFamily:"Velyra"}})
+
+    }
+    finally{
+      setIsCommenting(false)
+    }
+  }
+  const addComment=async()=>{
+    setIsCommenting(true)
+    try{
+      const response=await axios.post("http://localhost:5000/videos/addcomment",{videoId:id,comment:newComment},{headers:{"Authorization":localStorage.getItem("token")}})
+      if(response.data.success){
+        toast.success(response.data.message,{style:{fontFamily:"Velyra"}})
+        setVideo(response.data.video)
+        setNewComment("")
+      }
+      else{
+        toast.error(response.data.message,{style:{fontFamily:"Velyra"}})
+
+      }
+    }
+    catch(e){
+      toast.error(e.response?e.response.data.message:e.message,{style:{fontFamily:"Velyra"}})
+
+    }
+    finally{
+      setIsCommenting(false)
+    }
+  }
+  const likeVideo = async () => {
+    if (isLiking) return;
+    
+    setIsLiking(true);
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/videos/likevideo",
+        { videoId: id },
+        { headers: { Authorization: localStorage.getItem("token") } }
+      );
+  
+      if (response.data.success) {
+        toast.success(response.data.message, { style: { fontFamily: "Velyra" } });
+        const UID = jwtDecode(localStorage.getItem("token")).id;
+  
+        // Toggle isLiked state based on current state
+        setIsLiked(prev => !prev);
+        
+        // Update video state
+        setVideo(prevVideo => {
+          const updatedVideo = { ...prevVideo };
+          const currentLikedBy = updatedVideo.likedBy || [];
+          
+          if (!currentLikedBy.includes(UID)) {
+            updatedVideo.likedBy = [...currentLikedBy, UID];
+          } else {
+            updatedVideo.likedBy = currentLikedBy.filter(id => id !== UID);
+          }
+          
+          return updatedVideo;
+        });
+      }
+    } catch (e) {
+      toast.error(
+        e.response ? e.response.data.message : e.message,
+        { style: { fontFamily: "Velyra" } }
+      );
+    } finally {
+      setIsLiking(false);
+    }
+  };
   
   const fetchUserPlaylists = async () => {
-    setPlaylistsLoading(true); // Set playlistsLoading to true while fetching
+    setPlaylistsLoading(true);
     try {
       const response = await axios.get("http://localhost:5000/playlists/getmyplaylists", {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
         setUserPlaylists(response.data.playlists);
+      } else {
+        toast.error(response.data.message, { style: { fontFamily: "Velyra" } });
       }
     } catch (error) {
       console.error("Error fetching playlists:", error);
+      if(error.response)
+      {
+        if(error.response.data.message=="No playlists found.")
+        {
+
+        }
+        else{
+          toast.error(error.response ? error.response.data.message : error.message, { style: { fontFamily: "Velyra" } });
+
+        }
+
+      }
     } finally {
-      setPlaylistsLoading(false); // Set playlistsLoading to false after fetching
+      setPlaylistsLoading(false);
     }
   };
   
@@ -133,7 +293,7 @@ const Watch = () => {
       }
     } catch (error) {
       console.error("Error creating playlist:", error);
-      toast.error(error.response ? error.response.data.message : error.message,{style:{fontFamily:"Velyra"}});
+      toast.error(error.response ? error.response.data.message : error.message, { style: { fontFamily: "Velyra" } });
     } finally {
       setIsCreatingPlaylist(false);
     }
@@ -169,12 +329,55 @@ const Watch = () => {
       setIsUnsaving(false);
     }
   };
-  
+const subscribeToChannel = async () => {
+  setIsSubscribing(true);
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/users/follow",
+      { followingId: uploadedBy._id },
+      { headers: { Authorization: localStorage.getItem("token") } }
+    );
+
+    if (response.data.success) {
+      toast.success(response.data.message, { style: { fontFamily: "Velyra" } });
+
+      // Normalize the message for consistent checks
+      const message = response.data.message.trim().toLowerCase();
+
+      if (message === "followed the user successfully") {
+        console.log("Subscribing");
+        setUploadedBy((prevUploadedBy) => {
+          const updatedUploadedBy = { ...prevUploadedBy };
+          const currentFollowers = updatedUploadedBy.followers || [];
+          updatedUploadedBy.followers = [...currentFollowers, UID]; // Add UID to followers
+          return updatedUploadedBy;
+        });
+      } else if (message === "unfollowed the user successfully") {
+        console.log("Unsubscribing");
+        setUploadedBy((prevUploadedBy) => {
+          const updatedUploadedBy = { ...prevUploadedBy };
+          const currentFollowers = updatedUploadedBy.followers || [];
+          updatedUploadedBy.followers = currentFollowers.filter((id) => id !== UID); // Remove UID from followers
+          return updatedUploadedBy;
+        });
+      }
+    }
+  } catch (e) {
+    toast.error(
+      e.response ? e.response.data.message : e.message,
+      { style: { fontFamily: "Velyra" } }
+    );
+  } finally {
+    setIsSubscribing(false);
+  }
+};
+
   const getVideoDetails = async () => {
     try {
       const response = await axios.get(
         `http://localhost:5000/videos/getvideo/${id}?token=${localStorage.getItem("token")}`
       );
+      console.log("Video Details",response.data)
       if (response.data.success) {
         setVideo(response.data.video);
         setUploadedBy(response.data.uploadedBy);
@@ -188,8 +391,16 @@ const Watch = () => {
       setLoading(false);
     }
   };
-  
-  // Run isAlreadySaved only when playlists are loaded
+  useEffect(()=>{
+    const Id=jwtDecode(localStorage.getItem("token"))
+    setUID(Id)
+  },[])
+  useEffect(()=>{
+    if(uploadedBy){
+      const alreadyHaveSubscribed=hasSubscribed()
+      setAlreadySubscribed(alreadyHaveSubscribed)
+    }
+  },[uploadedBy])
   useEffect(() => {
     if (!playlistsLoading) {
       isAlreadySaved();
@@ -200,9 +411,8 @@ const Watch = () => {
     getVideoDetails();
     fetchUserPlaylists();
   }, [id]);
-  
 
-  if (loading) {
+  if (loading && !video) {
     return (
       <Layout>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
@@ -343,13 +553,17 @@ const Watch = () => {
                 <Typography variant="body2" color="textSecondary" fontFamily="Velyra">
                   {video.viewedBy?.length || 0} Views
                 </Typography>
+              
                 <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>
                   <Button
+                  disabled={isLiking}
+                  onClick={likeVideo}
                     startIcon={<ThumbUp />}
                     sx={{ mr: 2, fontFamily: "Velyra", '&:hover': { backgroundColor: "#e7f3ff" } }}
                     color="primary"
                   >
-                    Like {video.likedBy?.length || 0}
+                    
+                  {isLiking &&isLiked?"Unliking":isLiking&&!isLiked?"Liking":isLiked?"Liked":"Like"} {video.likedBy?.length || 0}
                   </Button>
                   <Button
                   disabled={isUnsaving}
@@ -440,105 +654,183 @@ const Watch = () => {
                 </Typography>
               </Box>
               <Button
+              onClick={()=>{
+                subscribeToChannel()
+              }}
                 variant="contained"
                 color="primary"
-                sx={{ fontFamily: "Velyra", textTransform: "capitalize" }}
+                sx={{ fontFamily: "Velyra", textTransform: "capitalize",height:"43px",width:"150px",borderRadius:1 }}
               >
-                Subscribe
+               {isSubscribing?<CircularProgress style={{color:"white",height:"18px",width:"18px"}} thickness={10}/>:alreadySubscribed?"Subscribed":"Subscribe"}
               </Button>
             </Box>
 
             {/* Comments Section */}
-            <Box sx={{ mt: 4 }}>
-              <Typography variant="h6" sx={{ fontFamily: "Velyra", mb: 2 }}>
-                Comments
+<Box sx={{ mt: 4, height: "550px", overflowY: "auto", borderRadius: "12px", scrollbarWidth: "thin", "&::-webkit-scrollbar": { width: "6px" }, "&::-webkit-scrollbar-track": { backgroundColor: "#f0f0f0", borderRadius: "30px" }, "&::-webkit-scrollbar-thumb": { backgroundColor: "#c0c0c0", borderRadius: "12px" } }}>
+  <Typography variant="h6" sx={{ fontFamily: "Velyra", mb: 2 }}>
+    Comments
+  </Typography>
+
+  {/* Comment Input */}
+  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+  <Input
+  placeholder={replyingToName ? `Replying to @${replyingToName}` : "Add a comment..."}
+  fullWidth
+  multiline
+  rows={2}
+  value={replyingToName ? `@${replyingToName}: ${newComment}` : newComment}
+  onChange={(e) => setNewComment(e.target.value.replace(`@${replyingToName}: `, ""))}
+  sx={{
+    fontFamily: "Velyra",
+    padding: "8px",
+    borderRadius: "8px",
+    backgroundColor: "#f5f5f5",
+  }}
+/>
+
+    <Button 
+      disabled={isCommenting}
+      onClick={()=>{
+        if(replyingToName){
+          replyToComment()
+        }
+        else{
+          addComment()
+        }
+      }}
+      variant="contained"
+      sx={{ 
+        fontFamily: "Velyra", 
+        height: "40px",
+        width:"100px",
+        textTransform: "none",
+      }}
+    >
+      {isCommenting 
+        ? <CircularProgress style={{ color: "white", height: "18px", width: "18px" }} thickness={10}/> 
+        : "Comment"}
+    </Button>
+  </Box>
+
+  {video.comments?.length > 0 ? (
+    video.comments.map((comment, index) => (
+      <Box key={index} sx={{ mt: 2 }}>
+        <Paper sx={{ padding: 2, mb: 1, borderRadius: "12px" }}>
+          {/* Profile and Comment Header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar 
+              src={comment.profilePhotoUrl} 
+              alt={comment.name} 
+              sx={{ width: 40, height: 40 }} 
+            />
+            <Box>
+              <Typography variant="body1" sx={{ fontFamily: "Velyra", fontWeight: "bold" }}>
+                {comment.name}
               </Typography>
-              
-              {/* Comment Input */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <Input
-                  placeholder="Add a comment..."
-                  fullWidth
-                  multiline
-                  rows={2}
-                  sx={{
-                    fontFamily: "Velyra",
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f5f5f5",
-                  }}
-                  value={newComment}
-                  onChange={handleNewCommentChange}
-                />
-                <Button 
-                  variant="contained"
-                  sx={{ 
-                    fontFamily: "Velyra", 
-                    height: "40px",
-                    textTransform: "none"
-                  }}
-                >
-                  Comment
-                </Button>
-              </Box>
-
-              {video.comments?.length > 0 ? (
-                video.comments.map((comment, index) => (
-                  <Box key={index} sx={{ mt: 2 }}>
-                    <Paper sx={{ padding: 2, mb: 1, borderRadius: "12px" }}>
-                      <Typography variant="body1" sx={{ fontFamily: "Velyra", fontWeight: "bold" }}>
-                        {comment.user}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontFamily: "Velyra", my: 1 }}>
-                        {comment.text}
-                      </Typography>
-                      {comment.replies?.length > 0 && (
-                        <Button
-                          onClick={() => handleExpandReplies(index)}
-                          sx={{
-                            fontFamily: "Velyra",
-                            fontSize: "14px",
-                            color: "#007BFF",
-                            mt: 1,
-                          }}
-                        >
-                          {comment.replies.length} Replies
-                        </Button>
-                      )}
-                    </Paper>
-
-                    {/* Replies */}
-                    <Collapse in={expandedComments[index]}>
-                      {comment.replies?.map((reply, idx) => (
-                        <Box key={idx} sx={{ pl: 4, mt: 1 }}>
-                          <Paper sx={{ padding: 2, borderRadius: "12px" }}>
-                            <Typography variant="body1" sx={{ fontFamily: "Velyra", fontWeight: "bold" }}>
-                              {reply.user}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontFamily: "Velyra", mt: 1 }}>
-                              {reply.text}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                      ))}
-                    </Collapse>
-                  </Box>
-                ))
-              ) : (
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    textAlign: "center", 
-                    color: "text.secondary",
-                    fontFamily: "Velyra",
-                    py: 4
-                  }}
-                >
-                  No comments yet. Be the first to comment!
-                </Typography>
-              )}
+              <Typography variant="caption" sx={{ fontFamily: "Velyra", color: "text.secondary" }}>
+                {moment(new Date(comment.date).toLocaleString()).fromNow()}
+              </Typography>
             </Box>
           </Box>
+          {/* Comment Text */}
+          <Typography variant="body2" sx={{ fontFamily: "Velyra", my: 1 }}>
+            {comment.text}
+          </Typography>
+
+          {/* Reply Button */}
+          <Button
+          onClick={()=>{
+            setReplyingToName(comment.name)
+            setCommentId(comment._id)
+          }}
+            sx={{
+              fontFamily: "Velyra",
+              fontSize: "14px",
+              color: "#007BFF",
+              mt: 1,
+            }}
+          >
+            Reply
+          </Button>
+
+          {/* Show Replies Button */}
+          {comment.replies?.length > 0 && (
+            <Button
+              onClick={() => handleExpandReplies(index)}
+              sx={{
+                fontFamily: "Velyra",
+                fontSize: "14px",
+                color: "#007BFF",
+                mt: 1,
+              }}
+            >
+              {comment.replies.length} Replies
+            </Button>
+          )}
+        </Paper>
+
+        {/* Replies */}
+        <Collapse in={expandedComments[index]}>
+          {comment.replies?.map((reply, idx) => (
+            <Box key={idx} sx={{ pl: 4, mt: 1 }}>
+              <Paper sx={{ padding: 2, borderRadius: "12px" }}>
+                {/* Reply Header */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Avatar 
+                    src={reply.profilePhotoUrl} 
+                    alt={reply.name} 
+                    sx={{ width: 32, height: 32 }} 
+                  />
+                  <Box>
+                    <Typography variant="body1" sx={{ fontFamily: "Velyra", fontWeight: "bold" }}>
+                      {reply.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontFamily: "Velyra", color: "text.secondary" }}>
+                      {moment(new Date(reply.date).toLocaleString()).fromNow()}
+                    </Typography>
+                  </Box>
+                </Box>
+                {/* Reply Text */}
+                <Typography variant="body2" sx={{ fontFamily: "Velyra", mt: 1 }}>
+                  {reply.text}
+                </Typography>
+
+                {/* Reply Button for Replies */}
+                <Button
+                onClick={()=>{
+                  setReplyingToName(reply.name)
+                  setCommentId(comment._id)
+                }}
+                  sx={{
+                    fontFamily: "Velyra",
+                    fontSize: "14px",
+                    color: "#007BFF",
+                    mt: 1,
+                  }}
+                >
+                  Reply
+                </Button>
+              </Paper>
+            </Box>
+          ))}
+        </Collapse>
+      </Box>
+    ))
+  ) : (
+    <Typography 
+      variant="body1" 
+      sx={{ 
+        textAlign: "center", 
+        color: "text.secondary",
+        fontFamily: "Velyra",
+        py: 4
+      }}
+    >
+      No comments yet. Be the first to comment!
+    </Typography>
+  )}
+</Box>
+</Box>
 
           {/* Related Videos Section */}
           <Box
