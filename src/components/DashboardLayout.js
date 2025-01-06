@@ -27,6 +27,7 @@ const DashboardLayout = ({ children }) => {
         sx={{
           flexGrow: 1,
           padding: "20px",
+          overflowX:"hidden",
           marginLeft: { xs: 0, sm: 0, md: isCollapsed ? "80px" : "280px" },
           transition: "margin 0.3s ease",
         }}

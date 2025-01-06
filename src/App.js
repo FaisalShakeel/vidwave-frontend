@@ -13,10 +13,12 @@ import Dashboard from './pages/Dashboard';
 import Uploads from './pages/Uploads';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import { SearchQueryProvider } from './contexts/SearchQueryContext';
 
 function App() {
   return (
     <BrowserRouter>
+    <SearchQueryProvider>
     <Routes>
       <Route path="/createaccount" element={<SignUp/>}></Route>
       <Route path='/login' element={<Login/>}></Route>
@@ -32,7 +34,10 @@ function App() {
       <Route path='/studio/analytics' element={<Analytics/>}></Route>
 
       <Route path='/studio/uploads' element={<Uploads/>}></Route>
-      </Routes></BrowserRouter>
+      </Routes>
+      </SearchQueryProvider>
+      </BrowserRouter>
+      
   )
 }
 

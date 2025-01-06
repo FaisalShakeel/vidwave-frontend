@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -19,13 +19,29 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
+import { useSearchQuery } from "../contexts/SearchQueryContext";
+import { jwtDecode } from "jwt-decode";
 
 const Navbar = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate=useNavigate()
+  const [decodedUser,setDecodedUser]=useState({})
+  const token=localStorage.getItem("token")
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
+  const{searchQuery,setSearchQuery}=useSearchQuery()
+  useEffect(()=>{
+    try{
+     const decodedToken= jwtDecode(localStorage.getItem("token"))
+     setDecodedUser(decodedToken)
+
+    }
+    catch(e){
+      console.error("Error while decoding the user")
+
+    }
+  },[token])
 
   return (
     <AppBar
@@ -76,7 +92,11 @@ const Navbar = ({ toggleSidebar }) => {
         >
           {/* Search Field (Hidden on smaller devices) */}
           <InputBase
+          value={searchQuery}
             placeholder="Search…"
+            onChange={(e)=>{
+              setSearchQuery(e.target.value)
+            }}
             sx={{
               display: { xs: "none", sm: "flex" },
               fontFamily: "Velyra, sans-serif",
@@ -86,7 +106,9 @@ const Navbar = ({ toggleSidebar }) => {
               px: 2,
             }}
           />
-          <IconButton color="primary">
+          <IconButton onClick={()=>{
+            navigate(`/search/?query=${searchQuery}`)
+          }} color="primary">
             <Search />
           </IconButton>
         </Box>
@@ -110,7 +132,9 @@ const Navbar = ({ toggleSidebar }) => {
           {/* Profile Menu */}
           <IconButton onClick={handleMenuOpen}>
             <img
-              src="https://via.placeholder.com/32"
+            height={30}
+            width={30}
+              src={decodedUser?decodedUser.profilePhotoUrl:"https://via.placeholder.com/32"}
               alt="Profile"
               style={{ borderRadius: "50%" }}
             />
@@ -130,23 +154,45 @@ const Navbar = ({ toggleSidebar }) => {
       }}
     >
       <MenuItem
-        onClick={handleMenuClose}
-        sx={{
-          fontFamily: "Velyra, sans-serif",
-          color: "#007BFF",
-          padding: "10px 20px",
+  onClick={() => {
+    navigate(`/profile/${decodedUser?.id}`);
+  }}
+  sx={{
+    fontFamily: "Velyra, sans-serif",
+    color: "#007BFF",
+    padding: "10px 20px",
+  }}
+>
+  <ListItemIcon
+    sx={{
+      minWidth: "40px", // Ensures consistent spacing for icons
+      color: "#007BFF",
+    }}
+  >
+    {decodedUser?.name ? (
+      <div
+        style={{
+          width: "30px",
+          height: "30px",
+          borderRadius: "50%",
+          backgroundColor: "#E0F7FA", // Light blue background
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#007BFF", // Same as the text color
+          fontWeight: "bold",
+          fontSize: "16px",
         }}
       >
-        <ListItemIcon
-          sx={{
-            minWidth: "40px", // Ensures consistent spacing for icons
-            color: "#007BFF",
-          }}
-        >
-          <AccountCircle />
-        </ListItemIcon>
-        My Profile
-      </MenuItem>
+        {decodedUser.name.charAt(0).toUpperCase()}
+      </div>
+    ) : (
+      <AccountCircle />
+    )}
+  </ListItemIcon>
+  My Profile
+</MenuItem>
+
       <MenuItem
         onClick={()=>{
           navigate("/studio/dashboard")

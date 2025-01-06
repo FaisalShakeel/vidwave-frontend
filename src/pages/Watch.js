@@ -79,6 +79,7 @@ const Watch = () => {
   };
   const[replyingToName,setReplyingToName]=useState("")
   const[commentId,setCommentId]=useState("")
+  const[isMe,setIsMe]=useState(false)
   
   const hasSubscribed = () => {
     if (!uploadedBy) {
@@ -392,6 +393,12 @@ const subscribeToChannel = async () => {
     }
   };
   useEffect(()=>{
+    if(uploadedBy){
+     const decodedToken= jwtDecode(localStorage.getItem("token"))
+     setIsMe(uploadedBy._id==decodedToken.id)
+    }
+  },[uploadedBy])
+  useEffect(()=>{
     const Id=jwtDecode(localStorage.getItem("token"))
     setUID(Id)
   },[])
@@ -548,7 +555,7 @@ const subscribeToChannel = async () => {
 
               <Box sx={{ p: 3 }}>
                 <Typography variant="h5" sx={{ fontFamily: "Velyra", fontWeight: "bold", color: "#007BFF" }}>
-                  {video.title}
+                  {video.title?video.title:""}
                 </Typography>
                 <Typography variant="body2" color="textSecondary" fontFamily="Velyra">
                   {video.viewedBy?.length || 0} Views
@@ -585,17 +592,24 @@ const subscribeToChannel = async () => {
 
                 {/* Video Description Section */}
                 <Box sx={{ mt: 3 }}>
-                  <Typography variant="body1" sx={{ fontFamily: "Velyra" }}>
-                    <strong>Description: </strong>
-                    {showFullDescription ? video.description : `${video.description?.slice(0, 200)}...`}
-                  </Typography>
-                  <Button
-                    onClick={() => setShowFullDescription(!showFullDescription)}
-                    sx={{ fontFamily: "Velyra", color: "#007BFF", mt: 1, textTransform: "none" }}
-                  >
-                    {showFullDescription ? "Show Less" : "Show More"}
-                  </Button>
-                </Box>
+  <Typography variant="body1" sx={{ fontFamily: "Velyra" }}>
+    <strong>Description: </strong>
+    {showFullDescription
+      ? video.description && video.description.trim() !== "" 
+        ? video.description 
+        : "No description available"  // If description is empty or undefined, show this text
+      : (video.description && video.description.trim() !== "" 
+        ? `${video.description.slice(0, 200)}...` 
+        : "No description available")}  {/* Ensure there is a fallback here too */}
+  </Typography>
+  <Button
+    onClick={() => setShowFullDescription(!showFullDescription)}
+    sx={{ fontFamily: "Velyra", color: "#007BFF", mt: 1, textTransform: "none" }}
+  >
+    {showFullDescription ? "Show Less" : "Show More"}
+  </Button>
+</Box>
+
 
                 {/* Tags Section */}
                 <Box sx={{ mt: 2 }}>
@@ -641,19 +655,30 @@ const subscribeToChannel = async () => {
               }}
             >
               <Avatar
+              onClick={
+                ()=>{
+                navigate(`/profile/${uploadedBy._id}`)
+
+
+                }
+              }
                 src={uploadedBy.profilePhotoUrl}
                 alt={uploadedBy.name}
-                sx={{ width: 56, height: 56 }}
+                sx={{ width: 56, height: 56,cursor:"pointer" }}
               />
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="h6" sx={{ fontFamily: "Velyra", fontWeight: "bold" }}>
+              <Box onClick={()=>{
+                navigate(`/profile/${uploadedBy._id}`)
+
+              }
+              } sx={{ flexGrow: 1 ,cursor:"pointer"}}>
+                <Typography variant="h6" sx={{ fontFamily: "Velyra",cursor:"pointer", fontWeight: "bold" }}>
                   {uploadedBy.name}
                 </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ fontFamily: "Velyra" }}>
+                <Typography variant="body2" color="textSecondary" sx={{ fontFamily: "Velyra",cursor:"pointer" }}>
                   {uploadedBy.followers?.length || 0} Followers
                 </Typography>
               </Box>
-              <Button
+              {isMe?<></>:<Button
               onClick={()=>{
                 subscribeToChannel()
               }}
@@ -662,7 +687,7 @@ const subscribeToChannel = async () => {
                 sx={{ fontFamily: "Velyra", textTransform: "capitalize",height:"43px",width:"150px",borderRadius:1 }}
               >
                {isSubscribing?<CircularProgress style={{color:"white",height:"18px",width:"18px"}} thickness={10}/>:alreadySubscribed?"Subscribed":"Subscribe"}
-              </Button>
+              </Button>}
             </Box>
 
             {/* Comments Section */}

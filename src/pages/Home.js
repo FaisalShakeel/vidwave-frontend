@@ -18,7 +18,7 @@ import { useNavigate } from "react-router";
 
 const HomePage = () => {
   const navigate=useNavigate()
-  const categories = ["All", "Trending", "Music", "Gaming", "Sports", "News", "Comedy", "Tech"];
+  const categories = ["All", "Music", "Gaming", "Sports", "News", "Comedy", "Tech"];
 
   const [videos, setVideos] = useState([]); // To store the fetched videos
   const [loading, setLoading] = useState(true); // To show loading state
