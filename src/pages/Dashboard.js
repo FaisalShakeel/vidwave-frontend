@@ -1,18 +1,44 @@
-import React from "react";
-import { Box, Typography, Grid, Card, CardContent } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Grid, Card, CardContent, CircularProgress } from "@mui/material";
 import DashboardLayout from "../components/DashboardLayout";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
 const Dashboard = () => {
-  const stats = [
-    { title: "Total Views", value: "10,245" },
-    { title: "Subscribers", value: "1,256" },
-    { title: "Videos Uploaded", value: "24" },
-  ];
+  const[statistics,setStatistics]=useState({})
+  const[loading,setLoading]=useState(true)
 
-  const recentUploads = [
-    { title: "My First Video", views: "1,204" },
-    { title: "React Tutorial", views: "856" },
-    { title: "CSS Tricks", views: "452" },
-  ];
+  const getDashboardStatistics=async()=>{
+    setLoading(true)
+    try{
+      const response=await axios.get("http://localhost:5000/users/get-dashboardstatistics",{headers:{"Authorization":localStorage.getItem("token")}})
+      if(response.data.success)
+      {
+      setStatistics(response.data.statistics)
+      toast.error(response.data.message,{style:{fontFamily:"Velyra"}})
+      setLoading(false)
+
+      }
+      else{
+    toast.error(response.data.success,{style:{fontFamily:"Velyra"}})
+
+      }
+    }
+    catch(e){
+    toast.error(e.response?e.response.data.message:e.message,{style:{fontFamily:"Velyra"}})
+    }
+  }
+  useEffect(()=>{
+    getDashboardStatistics()
+  },[])
+  if(loading){
+    return(
+    <DashboardLayout>
+    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+      <CircularProgress size={35} thickness={10} />
+    </Box>
+  </DashboardLayout>)
+  }
+  else{
 
   return (
     <DashboardLayout>
@@ -22,8 +48,8 @@ const Dashboard = () => {
         Welcome to your Dashboard
       </Typography>
       
-      {/* <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat) => (
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {statistics.generalStats.map((stat) => (
           <Grid item xs={12} md={4} key={stat.title}>
             <Card
               sx={{
@@ -46,12 +72,12 @@ const Dashboard = () => {
         ))}
       </Grid>
 
-      // Recent Uploads 
+     
       <Typography variant="h5" sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 2 }}>
         Recent Uploads
       </Typography>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {recentUploads.map((upload, index) => (
+        {statistics.recentUploads.map((upload, index) => (
           <Box
             key={index}
             sx={{
@@ -70,10 +96,11 @@ const Dashboard = () => {
           </Box>
         ))}
       </Box>
-      */}
+     
     </Box> 
     </DashboardLayout>
   );
+}
 };
 
 export default Dashboard;
