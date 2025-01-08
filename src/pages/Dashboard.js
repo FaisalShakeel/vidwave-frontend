@@ -14,7 +14,7 @@ const Dashboard = () => {
       if(response.data.success)
       {
       setStatistics(response.data.statistics)
-      toast.error(response.data.message,{style:{fontFamily:"Velyra"}})
+      
       setLoading(false)
 
       }

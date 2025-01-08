@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, Typography, Grid, Card, CardContent, Divider } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Grid, Card, CardContent, Divider, CircularProgress } from "@mui/material";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -13,6 +13,8 @@ import {
   Legend,
 } from "chart.js";
 import DashboardLayout from "../components/DashboardLayout";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 ChartJS.register(
   BarElement,
@@ -27,6 +29,7 @@ ChartJS.register(
 
 const Analytics = () => {
   // Chart Data
+  const[analytics,setAnalytics]=useState({})
   const barChartData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
@@ -37,31 +40,38 @@ const Analytics = () => {
       },
     ],
   };
+  const[loading,setLoading]=useState(true)
+  const getAnalytics=async()=>{
+    try{
+      const response=await axios.get("http://localhost:5000/users/get-analytics",{headers:{"Authorization":localStorage.getItem("token")}})
+      console.log("analytics",response.data)
+      if(response.data.success){
+        setAnalytics(response.data.analytics)
+        setLoading(false)
 
-  const lineChartData = {
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    datasets: [
-      {
-        label: "Subscribers",
-        data: [100, 150, 200, 300],
-        borderColor: "#28A745",
-        borderWidth: 2,
-        fill: true,
-        backgroundColor: "rgba(40, 167, 69, 0.2)",
-      },
-    ],
-  };
+      }
+      else{
+        toast.error(response.data.message,{style:{fontFamily:"Velyra"}})
 
-  const doughnutChartData = {
-    labels: ["18-24", "25-34", "35-44", "45+"],
-    datasets: [
-      {
-        label: "Audience Demographics",
-        data: [40, 30, 20, 10],
-        backgroundColor: ["#007BFF", "#6C757D", "#FFC107", "#DC3545"],
-      },
-    ],
-  };
+      }
+    }
+    catch(e){
+      toast.error(e.response?e.response.data.message:e.message,{style:{fontFamily:"Velyra"}})
+    }
+  }
+  useEffect(()=>{
+    getAnalytics()
+  },[])
+  if(loading){
+    return(
+      <DashboardLayout>
+      
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <CircularProgress size={35} thickness={10} />
+      </Box>
+    </DashboardLayout>)
+  }
+  else{
 
   return (
     <DashboardLayout>
@@ -75,90 +85,106 @@ const Analytics = () => {
       </Typography>
 
       {/* Key Metrics */}
-      {/*
+      
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              backgroundColor: "#F4F8FB",
-              border: "1px solid #D1E3F8",
-              boxShadow: "none",
-              borderRadius: "12px",
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant="h6"
-                sx={{ fontFamily: "Velyra", color: "#007BFF" }}
-              >
-                Total Views
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{ fontFamily: "Velyra", fontWeight: "bold" }}
-              >
-                45,000
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      <Grid item xs={12} md={4}>
+  <Card
+    sx={{
+      backgroundColor: "#F4F8FB",
+      border: "1px solid #D1E3F8",
+      boxShadow: "none",
+      borderRadius: "12px",
+      height: "150px", // Set a fixed height
+      display: "flex", // Center content
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <CardContent>
+      <Typography
+        variant="h6"
+        sx={{ fontFamily: "Velyra", color: "#007BFF", textAlign: "center" }}
+      >
+        Total Views
+      </Typography>
+      <Typography
+        variant="h5"
+        sx={{ fontFamily: "Velyra", fontWeight: "bold", textAlign: "center" }}
+      >
+        {analytics.totalViews}
+      </Typography>
+    </CardContent>
+  </Card>
+</Grid>
 
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              backgroundColor: "#F4F8FB",
-              border: "1px solid #D1E3F8",
-              boxShadow: "none",
-              borderRadius: "12px",
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant="h6"
-                sx={{ fontFamily: "Velyra", color: "#28A745" }}
-              >
-                New Subscribers
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{ fontFamily: "Velyra", fontWeight: "bold" }}
-              >
-                1,200
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+<Grid item xs={12} md={4}>
+  <Card
+    sx={{
+      backgroundColor: "#F4F8FB",
+      border: "1px solid #D1E3F8",
+      boxShadow: "none",
+      borderRadius: "12px",
+      height: "150px", // Set a fixed height
+      display: "flex", // Center content
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <CardContent>
+      <Typography
+        variant="h6"
+        sx={{ fontFamily: "Velyra", color: "#28A745", textAlign: "center" }}
+      >
+        Total Comments
+      </Typography>
+      <Typography
+        variant="h5"
+        sx={{ fontFamily: "Velyra", fontWeight: "bold", textAlign: "center" }}
+      >
+        {analytics.totalComments}
+      </Typography>
+    </CardContent>
+  </Card>
+</Grid>
 
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              backgroundColor: "#F4F8FB",
-              border: "1px solid #D1E3F8",
-              boxShadow: "none",
-              borderRadius: "12px",
-            }}
-          >
-            <CardContent>
-              <Typography
-                variant="h6"
-                sx={{ fontFamily: "Velyra", color: "#FFC107" }}
-              >
-                Average Watch Time
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{ fontFamily: "Velyra", fontWeight: "bold" }}
-              >
-                5 mins 32 secs
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+<Grid item xs={12} md={4}>
+  <Card
+    sx={{
+      backgroundColor: "#F4F8FB",
+      border: "1px solid #D1E3F8",
+      boxShadow: "none",
+      borderRadius: "12px",
+      height: "150px", // Set a fixed height
+      display: "flex", // Center content
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <CardContent>
+      <Typography
+        variant="h6"
+        sx={{ fontFamily: "Velyra", color: "#FF4D4D", textAlign: "center" }} // Change color to red
+      >
+        Most Liked Video
+      </Typography>
+      <Typography
+        variant="h5"
+        sx={{ fontFamily: "Velyra", fontWeight: "bold", textAlign: "center" }}
+      >
+        {analytics.mostLikedVideo.title} ({analytics.mostLikedVideo.likes} Likes)
+      </Typography>
+    </CardContent>
+  </Card>
+</Grid>
+
       </Grid>
 
-    //Charts
+  
       <Grid container spacing={4}>
-        // Views Over Time (Bar Chart)
+        
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -166,32 +192,58 @@ const Analytics = () => {
           >
             Views Over Time
           </Typography>
-          <Bar data={barChartData} options={{ responsive: true }} />
+          <Bar
+  data={{
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Views",
+        data: analytics.viewsOverTime.data,
+        backgroundColor: "#007BFF",
+      },
+    ],
+  }}
+  options={{
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: {
+          font: {
+            family: "Velyra",
+          },
+        },
+      },
+      tooltip: {
+        bodyFont: {
+          family: "Velyra",
+        },
+        titleFont: {
+          family: "Velyra",
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          font: {
+            family: "Velyra",
+          },
+        },
+      },
+      y: {
+        ticks: {
+          font: {
+            family: "Velyra",
+          },
+        },
+      },
+    },
+  }}
+/>
+
         </Grid>
 
-        // Subscribers Growth (Line Chart) 
-        <Grid item xs={12} md={6}>
-          <Typography
-            variant="h6"
-            sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 2 }}
-          >
-            Subscribers Growth
-          </Typography>
-          <Line data={lineChartData} options={{ responsive: true }} />
-        </Grid>
-
-        // Audience Demographics (Doughnut Chart) 
-        <Grid item xs={12} md={6}>
-          <Typography
-            variant="h6"
-            sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 2 }}
-          >
-            Audience Demographics
-          </Typography>
-          <Doughnut data={doughnutChartData} options={{ responsive: true }} />
-        </Grid>
-
-        // Additional Section 
+       
         <Grid item xs={12} md={6}>
           <Typography
             variant="h6"
@@ -201,7 +253,7 @@ const Analytics = () => {
           </Typography>
           <Divider sx={{ mb: 2 }} />
           <Box>
-            {["React Tutorial", "CSS Tricks", "Firebase Crash Course"].map(
+            {analytics.topPerformingVideos.map(
               (video, index) => (
                 <Box
                   key={index}
@@ -215,20 +267,21 @@ const Analytics = () => {
                   <Typography
                     sx={{ fontFamily: "Velyra", fontWeight: "bold" }}
                   >
-                    {video}
+                    {video.title}
                   </Typography>
                   <Typography sx={{ fontFamily: "Velyra", color: "#6C757D" }}>
-                    {Math.floor(Math.random() * 5000) + 1000} views
+                    {video.views} views
                   </Typography>
                 </Box>
               )
             )}
           </Box>
         </Grid>
-      </Grid> */}
+      </Grid>
     </Box>
     </DashboardLayout>
   );
+}
 };
 
 export default Analytics;
