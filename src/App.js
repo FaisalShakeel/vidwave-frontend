@@ -14,6 +14,7 @@ import Uploads from './pages/Uploads';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import { SearchQueryProvider } from './contexts/SearchQueryContext';
+import EditVideo from './pages/EditVideo';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path='/profile/:id' element={<Profile/>}></Route>
       <Route path='/search' element={<Search/>}></Route>
       <Route path='/studio/upload-video' element={<UploadVideo/>}></Route>
+      <Route path='/studio/edit-video/:id' element={<EditVideo/>}></Route>
       <Route path='studio/dashboard' element={
         <Dashboard/>
       } ></Route>

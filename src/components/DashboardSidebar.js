@@ -25,7 +25,7 @@ const DashboardSidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelec
 
   // Logic to handle selected option based on current route
   const getSelectedOption = () => {
-    if (location.pathname === "/studio/upload-video") {
+    if (location.pathname === "/studio/upload-video" ||location.pathname.includes("/studio/edit-video")) {
       return "Uploads"; // Handle special case for /studio/upload-video
     }
     const selectedItem = menuItems.find((item) => location.pathname.startsWith(item.route));

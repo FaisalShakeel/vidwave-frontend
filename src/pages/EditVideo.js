@@ -24,16 +24,17 @@ import Layout from "../components/Layout";
 import DashboardLayout from "../components/DashboardLayout";
 import {X} from 'lucide-react'
 import axios from 'axios'
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
-const UploadVideo = () => {
+const EditVideo = () => {
+    const{id}=useParams()
   const navigate=useNavigate()
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoCategory, setVideoCategory] = useState("Tech");
-  const [videoTags, setVideoTags] = useState([]);
+ 
   const [videoLength, setVideoLength] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -44,8 +45,8 @@ const UploadVideo = () => {
   const [videoDuration, setVideoDuration] = useState(null);
   const [loadingThumbnail, setLoadingThumbnail] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(false);
-  const [newTag, setNewTag] = useState('');
-  
+  const[loading,setLoading]=useState(true)
+  const[error,setError]=useState("")
  
   const predefinedTags = [
     'Technology', 'Music', 'Gaming', 'Education', 
@@ -169,8 +170,30 @@ const formatTime = (durationInSeconds) => {
       }
     );
   };
+  const getVideoDetails = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/videos/getvideo/${id}?token=${localStorage.getItem("token")}`
+      );
+      console.log("Video Details",response.data)
+      if (response.data.success) {
+        setVideoTitle(response.data.video.title);
+        setVideoCategory(response.data.video.category)
+        setVideoDescription(response.data.video.description)
+        setSelectedTags(response.data.video.tags)
+        setVideoURL(response.data.video.url)
+        setThumbnailURL(response.data.video.thumbnailUrl)
+      } else {
+        setError(response.data.message);
+      }
+      setLoading(false);
+    } catch (e) {
+      setError(e.response ? e.response.data.message : e.message);
+      setLoading(false);
+    }
+  };
 
-  const handleUpload = async() => {
+  const handleUpdate = async() => {
     if (!videoTitle || !videoDescription || !videoCategory) {
       setErrorMessage("Please fill out all fields");
       setTimeout(()=>{
@@ -203,12 +226,12 @@ const formatTime = (durationInSeconds) => {
     setUploading(true);
     try{
       console.log("API Calling")
-      const response=await axios.post("http://localhost:5000/videos/upload-video",{title:videoTitle,description:videoDescription,category:videoCategory,tags:selectedTags,thumbnailUrl:thumbnailURL,url:videoURL},{headers:{"Authorization":localStorage.getItem("token")}})
+      const response=await axios.put("http://localhost:5000/videos/update-video",{videoId:id,title:videoTitle,description:videoDescription,category:videoCategory,tags:selectedTags,thumbnailUrl:thumbnailURL,url:videoURL},{headers:{"Authorization":localStorage.getItem("token")}})
       console.log("Reponese",response.data)
       if(response.data.success){
-        setSuccessMessage("Successfully Uploaded!")
+        setSuccessMessage("Successfully Updated!")
         setTimeout(()=>{
-          navigate("/")
+          navigate(-1)
         },1000)
       }
       else{
@@ -230,7 +253,20 @@ const formatTime = (durationInSeconds) => {
       setUploading(false)
     }
   }
+  useEffect(()=>{
+    getVideoDetails()
+  },[id])
+  if(loading){
 
+    return(
+        <DashboardLayout>
+        
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+          <CircularProgress size={35} thickness={10} />
+        </Box>
+      </DashboardLayout>)
+  }
+  else{
 
   return (
     <DashboardLayout>
@@ -245,7 +281,7 @@ const formatTime = (durationInSeconds) => {
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <Typography variant="h4" sx={{ fontFamily: "Velyra", fontWeight: "bold", mb: 4 }}>
-            Upload Your Video
+            Edit Your Video
           </Typography>
 
           <FormControl fullWidth sx={{ fontFamily: "Velyra" }}>
@@ -400,10 +436,7 @@ const formatTime = (durationInSeconds) => {
       </Box>
     </div>
       
-          <FormControl fullWidth sx={{ fontFamily: "Velyra" }}>
-            <InputLabel shrink sx={{fontFamily:"Velyra",fontWeight:"bold",fontSize:"18px"}}>Video Duration</InputLabel>
-            <Input value={videoLength} inputProps={{style:{fontFamily:"Velyra"}}} disabled  fullWidth />
-          </FormControl>
+         
 
           {/* Thumbnail Upload */}
         
@@ -618,11 +651,11 @@ const formatTime = (durationInSeconds) => {
 
           <Button
             variant="contained"
-            onClick={handleUpload}
-            sx={{ backgroundColor: "#007BFF", color: "#fff", mt: 3 }}
+            onClick={handleUpdate}
+            sx={{ backgroundColor: "#007BFF", color: "#fff", mt: 3,fontFamily:"Velyra" }}
             disabled={uploading}
           >
-            {uploading ? <CircularProgress size={24} /> : "Upload Video"}
+            {uploading ? <CircularProgress size={24} /> : "Update Video"}
           </Button>
 
           {errorMessage && <Snackbar open={true} severity autoHideDuration={2000} >
@@ -640,6 +673,7 @@ const formatTime = (durationInSeconds) => {
       </Box>
     </DashboardLayout>
   );
+}
 };
 
-export default UploadVideo;
+export default EditVideo;

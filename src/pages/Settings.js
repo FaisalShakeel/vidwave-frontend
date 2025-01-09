@@ -56,7 +56,7 @@ const Settings = () => {
       >
         Settings
       </Typography>
-      {/* <form onSubmit={handleFormSubmit}>
+      <form onSubmit={handleFormSubmit}>
         // Profile Information Section
         <Typography
           variant="h6"
@@ -184,7 +184,7 @@ const Settings = () => {
         >
           Save Changes
         </Button>
-      </form> */}
+      </form>
     </Box>
     </DashboardLayout>
   );

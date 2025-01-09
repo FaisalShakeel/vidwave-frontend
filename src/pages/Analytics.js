@@ -30,16 +30,7 @@ ChartJS.register(
 const Analytics = () => {
   // Chart Data
   const[analytics,setAnalytics]=useState({})
-  const barChartData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [
-      {
-        label: "Views",
-        data: [500, 1200, 900, 1500, 2000, 1800],
-        backgroundColor: "#007BFF",
-      },
-    ],
-  };
+
   const[loading,setLoading]=useState(true)
   const getAnalytics=async()=>{
     try{
