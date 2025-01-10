@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, CssBaseline } from "@mui/material";
 import DashboardSidebar from "./DashboardSidebar";
-import { Route, Routes, useLocation } from "react-router-dom";
 
 const DashboardLayout = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -11,9 +10,34 @@ const DashboardLayout = ({ children }) => {
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
   const toggleMobileDrawer = () => setSidebarOpen(!isSidebarOpen);
 
+  // Suppress ResizeObserver error
+  useEffect(() => {
+    const observerErrorHandler = (error) => {
+      if (
+        error.message &&
+        error.message.includes("ResizeObserver loop limit exceeded")
+      ) {
+        error.preventDefault();
+      }
+    };
+    window.addEventListener("error", observerErrorHandler);
+
+    return () => {
+      window.removeEventListener("error", observerErrorHandler);
+    };
+  }, []);
+
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        minHeight: "100vh", // Ensures the layout always fills the screen height
+        overflow: "hidden", // Prevent scrollbars triggering ResizeObserver
+      }}
+    >
       <CssBaseline />
+
       <DashboardSidebar
         isCollapsed={isCollapsed}
         toggleSidebar={toggleSidebar}
@@ -23,13 +47,14 @@ const DashboardLayout = ({ children }) => {
         toggleMobileDrawer={toggleMobileDrawer}
       />
 
+      {/* Main Content */}
       <Box
         sx={{
           flexGrow: 1,
           padding: "20px",
-          overflowX:"hidden",
-          marginLeft: { xs: 0, sm: 0, md: isCollapsed ? "80px" : "280px" },
+          marginLeft: isCollapsed ? { xs: "0", md: "80px" } : { xs: "0", md: "280px" },
           transition: "margin 0.3s ease",
+          overflow: "hidden", // Prevent layout shifting
         }}
       >
         {children}
