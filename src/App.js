@@ -15,6 +15,10 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import { SearchQueryProvider } from './contexts/SearchQueryContext';
 import EditVideo from './pages/EditVideo';
+import LikedVideos from './pages/LikedVideos';
+import SavedVideos from './pages/SavedVideos';
+import YourVideos from './pages/MyVideos';
+import NotFound from './components/NotFound';
 
 function App() {
   return (
@@ -24,8 +28,12 @@ function App() {
       <Route path="/createaccount" element={<SignUp/>}></Route>
       <Route path='/login' element={<Login/>}></Route>
       <Route path='/'  element={<HomePage/>}></Route>
+      <Route path='*' element={<NotFound/>}></Route>
       <Route path='/watch/:id' element={<Watch/>}></Route>
       <Route path='/profile/:id' element={<Profile/>}></Route>
+      <Route path='/liked-videos' element={<LikedVideos/>}></Route>
+      <Route path='/saved-videos' element={<SavedVideos/>}></Route>
+      <Route path='/your-videos' element={<YourVideos/>}></Route>
       <Route path='/search' element={<Search/>}></Route>
       <Route path='/studio/upload-video' element={<UploadVideo/>}></Route>
       <Route path='/studio/edit-video/:id' element={<EditVideo/>}></Route>

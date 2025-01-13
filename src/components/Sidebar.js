@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   List,
@@ -20,16 +20,35 @@ import {
   Menu as MenuIcon,
   Bookmark,
 } from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router";
 
 const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const menuItems = [
-    { text: "Home", icon: <Home /> },
-    { text: "Liked Videos", icon: <ThumbUp /> },
-    { text: "Playlists", icon: <PlaylistPlay /> },
-    { text: "Your Videos", icon: <VideoLibrary /> },
-    { text: "Saved Videos", icon: <Bookmark /> },
-    { text: "History", icon: <History /> },
+    { text: "Home", icon: <Home />, path: "/" },
+    { text: "Liked Videos", icon: <ThumbUp />, path: "/liked-videos" },
+    { text: "Playlists", icon: <PlaylistPlay />, path: "/playlists" },
+    { text: "Your Videos", icon: <VideoLibrary />, path: "/your-videos" },
+    { text: "Saved Videos", icon: <Bookmark />, path: "/saved-videos" },
+    { text: "History", icon: <History />, path: "/history" },
   ];
+
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const currentItem = menuItems.find(item => item.path === currentPath);
+    if (currentItem) {
+      setSelectedOption(currentItem.text);
+    }
+  }, [location.pathname, setSelectedOption]);
+
+  const handleItemClick = (item) => {
+    setSelectedOption(item.text);
+    if (item.path) {
+      navigate(item.path);
+    }
+  };
 
   const sidebarContent = (collapsed) => (
     <List sx={{ paddingLeft: 0 }}>
@@ -41,7 +60,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
         >
           <ListItem
             button
-            onClick={() => setSelectedOption(item.text)}
+            onClick={() => handleItemClick(item)}
             sx={{
               marginBottom: 2,
               borderRadius: "50px",
@@ -55,7 +74,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
               justifyContent: collapsed ? "center" : "flex-start",
               transition: "padding 0.3s ease",
               alignItems: "center",
-              marginLeft: 0, // Ensure no space on the left side
+              marginLeft: 0,
             }}
           >
             <ListItemIcon
@@ -70,7 +89,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
             {!collapsed && (
               <ListItemText
                 primary={item.text}
-                sx={{cursor:"default"}}
+                sx={{ cursor: "default" }}
                 primaryTypographyProps={{
                   fontFamily: "Velyra",
                   fontWeight: selectedOption === item.text ? "bold" : "normal",
@@ -149,7 +168,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
           "& .MuiDrawer-paper": {
             width: "280px",
             boxSizing: "border-box",
-            paddingLeft: 0, // Ensure no space on the left side
+            paddingLeft: 0,
           },
         }}
       >
@@ -193,7 +212,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
               },
             }}
           >
-            {sidebarContent(false)} {/* Always show text in mobile drawer */}
+            {sidebarContent(false)}
           </Box>
         </Box>
       </Drawer>

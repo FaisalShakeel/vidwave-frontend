@@ -135,7 +135,10 @@ const Watch = () => {
     if (userPlaylists.length === 0) return false;
   
     const _isSaved = userPlaylists.some((playlist) => {
-      if (playlist.videos.includes(id)) {
+      // Check if the video object with matching _id exists in the playlist's videos array
+      const videoExists = playlist.videos.some((video) => video._id === id);
+  
+      if (videoExists) {
         setSelectedPlaylistId(playlist._id);
         setSelectedPlaylistName(playlist.title);
         return true;
@@ -146,6 +149,7 @@ const Watch = () => {
     setIsSaved(_isSaved);
     return _isSaved;
   };
+  
   
  
   
@@ -307,7 +311,7 @@ const Watch = () => {
       const response = await axios.post(
         `http://localhost:5000/playlists/addtoplaylist`,
         {
-          videoId: id,
+          video,
           playlistId,
         },
         {
