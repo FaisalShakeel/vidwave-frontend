@@ -19,6 +19,8 @@ import LikedVideos from './pages/LikedVideos';
 import SavedVideos from './pages/SavedVideos';
 import YourVideos from './pages/MyVideos';
 import NotFound from './components/NotFound';
+import Playlists from './pages/Playlists';
+import PlaylistVideos from './pages/PlaylistVideos';
 
 function App() {
   return (
@@ -34,7 +36,11 @@ function App() {
       <Route path='/liked-videos' element={<LikedVideos/>}></Route>
       <Route path='/saved-videos' element={<SavedVideos/>}></Route>
       <Route path='/your-videos' element={<YourVideos/>}></Route>
+      <Route path='/playlists' element={<Playlists/>}></Route>
+      <Route path='/playlist/:id/videos' element={<PlaylistVideos/>}></Route>
+
       <Route path='/search' element={<Search/>}></Route>
+     
       <Route path='/studio/upload-video' element={<UploadVideo/>}></Route>
       <Route path='/studio/edit-video/:id' element={<EditVideo/>}></Route>
       <Route path='studio/dashboard' element={

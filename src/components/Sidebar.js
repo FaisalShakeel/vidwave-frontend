@@ -37,7 +37,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const currentItem = menuItems.find(item => item.path === currentPath);
+    const currentItem = menuItems.find(item => item.path === currentPath||item.path.includes(currentPath.split("/")[1]));
     if (currentItem) {
       setSelectedOption(currentItem.text);
     }
