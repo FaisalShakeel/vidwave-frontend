@@ -4,12 +4,12 @@ import {
   Toolbar,
   IconButton,
   InputBase,
-  Badge,
   Menu,
   MenuItem,
   ListItemIcon,
   Typography,
   Box,
+  Button,
 } from "@mui/material";
 import { AccountCircle, VideoLibrary, Logout } from "@mui/icons-material";
 import {
@@ -24,38 +24,48 @@ import { jwtDecode } from "jwt-decode";
 
 const Navbar = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const navigate=useNavigate()
-  const [decodedUser,setDecodedUser]=useState({})
-  const token=localStorage.getItem("token")
+  const navigate = useNavigate();
+  const [decodedUser, setDecodedUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const token = localStorage.getItem("token");
+  const { searchQuery, setSearchQuery } = useSearchQuery();
+
+  useEffect(() => {
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+        if (decodedToken.exp < currentTime) {
+          setIsAuthenticated(false);
+          localStorage.removeItem("token");
+        } else {
+          setDecodedUser(decodedToken);
+          setIsAuthenticated(true);
+        }
+      } catch (e) {
+        console.error("Error while decoding the user");
+        setIsAuthenticated(false);
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, [token]);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-  const{searchQuery,setSearchQuery}=useSearchQuery()
-  useEffect(()=>{
-    try{
-     const decodedToken= jwtDecode(localStorage.getItem("token"))
-     setDecodedUser(decodedToken)
-
-    }
-    catch(e){
-      console.error("Error while decoding the user")
-
-    }
-  },[token])
 
   return (
     <AppBar
       position="sticky"
       sx={{
         backgroundColor: "#ffffff",
-        boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+        boxShadow: "0px 4px 20px rgba(0,0,0,0.05)",
         zIndex: 1200,
         padding: { xs: "0 10px", sm: "0 20px" },
         borderRadius: 0,
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between", minHeight: 80 }}>
-        {/* Sidebar Toggle (Visible on smaller devices) */}
         <IconButton
           edge="start"
           color="primary"
@@ -65,7 +75,6 @@ const Navbar = ({ toggleSidebar }) => {
           <MenuIcon />
         </IconButton>
 
-        {/* Logo / Project Name */}
         <Typography
           variant="h5"
           sx={{
@@ -78,7 +87,6 @@ const Navbar = ({ toggleSidebar }) => {
           Vidwave
         </Typography>
 
-        {/* Search Bar */}
         <Box
           sx={{
             display: "flex",
@@ -90,12 +98,11 @@ const Navbar = ({ toggleSidebar }) => {
             boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
           }}
         >
-          {/* Search Field (Hidden on smaller devices) */}
           <InputBase
-          value={searchQuery}
+            value={searchQuery}
             placeholder="Search…"
-            onChange={(e)=>{
-              setSearchQuery(e.target.value)
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
             }}
             sx={{
               display: { xs: "none", sm: "flex" },
@@ -106,132 +113,229 @@ const Navbar = ({ toggleSidebar }) => {
               px: 2,
             }}
           />
-          <IconButton onClick={()=>{
-            navigate(`/search/?query=${searchQuery}`)
-          }} color="primary">
+          <IconButton
+            onClick={() => {
+              navigate(`/search/?query=${searchQuery}`);
+            }}
+            color="primary"
+          >
             <Search />
           </IconButton>
         </Box>
 
-        {/* Action Icons */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {/* Notifications */}
-          <IconButton color="primary">
-            <Badge badgeContent={3} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          {isAuthenticated && (
+            <>
+              <IconButton
+                onClick={() => {
+                  navigate("/notifications");
+                }}
+                color="primary"
+              >
+                <Notifications />
+              </IconButton>
 
-          {/* Add Action */}
-          <IconButton onClick={()=>{
-            navigate("/studio/upload-video")
-          }} color="primary">
-            <Add />
-          </IconButton>
+              <IconButton
+                onClick={() => {
+                  navigate("/studio/upload-video");
+                }}
+                color="primary"
+              >
+                <Add />
+              </IconButton>
+            </>
+          )}
 
-          {/* Profile Menu */}
-          <IconButton onClick={handleMenuOpen}>
-            <img
-            height={30}
-            width={30}
-              src={decodedUser?decodedUser.profilePhotoUrl:"https://via.placeholder.com/32"}
-              alt="Profile"
-              style={{ borderRadius: "50%" }}
-            />
-          </IconButton>
+          {isAuthenticated ? (
+            <>
+              <IconButton onClick={handleMenuOpen}>
+                <img
+                  height={40}
+                  width={40}
+                  src={
+                    decodedUser?.profilePhotoUrl ||
+                    "https://via.placeholder.com/40"
+                  }
+                  alt="Profile"
+                  style={{
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    transition: "transform 0.3s ease",
+                    "&:hover": {
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                />
+              </IconButton>
 
-          <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={handleMenuClose}
-      sx={{
-        mt: 2,
-        "& .MuiPaper-root": {
-          borderRadius: 3,
-          boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
-          padding: "10px 0",
-        },
-      }}
-    >
-      <MenuItem
-  onClick={() => {
-    navigate(`/profile/${decodedUser?.id}`);
-  }}
-  sx={{
-    fontFamily: "Velyra, sans-serif",
-    color: "#007BFF",
-    padding: "10px 20px",
-  }}
->
-  <ListItemIcon
-    sx={{
-      minWidth: "40px", // Ensures consistent spacing for icons
-      color: "#007BFF",
-    }}
-  >
-    {decodedUser?.name ? (
-      <div
-        style={{
-          width: "30px",
-          height: "30px",
-          borderRadius: "50%",
-          backgroundColor: "#E0F7FA", // Light blue background
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#007BFF", // Same as the text color
-          fontWeight: "bold",
-          fontSize: "16px",
-        }}
-      >
-        {decodedUser.name.charAt(0).toUpperCase()}
-      </div>
-    ) : (
-      <AccountCircle />
-    )}
-  </ListItemIcon>
-  My Profile
-</MenuItem>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                sx={{
+                  mt: 1,
+                  "& .MuiPaper-root": {
+                    borderRadius: "16px",
+                    boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
+                    background: "linear-gradient(145deg, #f9fafb 0%, #f1f3f9 100%)",
+                    border: "1px solid rgba(0,123,255,0.1)",
+                    minWidth: "260px",
+                    padding: "12px 0",
+                    overflow: "visible",
+                  },
+                }}
+              >
+                {/* User Info Header */}
+                <Box 
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px 20px',
+                    borderBottom: '1px solid rgba(0,0,0,0.05)',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <img
+                    height={56}
+                    width={56}
+                    src={
+                      decodedUser?.profilePhotoUrl ||
+                      "https://via.placeholder.com/56"
+                    }
+                    alt="Profile"
+                    style={{
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      marginRight: '16px',
+                    }}
+                  />
+                  <Box>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontSize: '18px', 
+                        fontWeight: 600, 
+                        color: '#007BFF',
+                        fontFamily: "Velyra, sans-serif",
+                      }}
+                    >
+                      {decodedUser?.name || 'User'}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#6B7280', 
+                        fontFamily: "Velyra, sans-serif",
+                      }}
+                    >
+                      {decodedUser?.email || 'user@example.com'}
+                    </Typography>
+                  </Box>
+                </Box>
 
-      <MenuItem
-        onClick={()=>{
-          navigate("/studio/dashboard")
-        }}
-        sx={{
-          fontFamily: "Velyra, sans-serif",
-          color: "#007BFF",
-          padding: "10px 20px",
-        }}
-      >
-        <ListItemIcon
-          sx={{
-            minWidth: "40px",
-            color: "#007BFF",
-          }}
-        >
-          <VideoLibrary />
-        </ListItemIcon>
-        Go to Studio
-      </MenuItem>
-      <MenuItem
-        onClick={handleMenuClose}
-        sx={{
-          fontFamily: "Velyra, sans-serif",
-          color: "#FF3D00",
-          padding: "10px 20px",
-        }}
-      >
-        <ListItemIcon
-          sx={{
-            minWidth: "40px",
-            color: "#FF3D00",
-          }}
-        >
-          <Logout />
-        </ListItemIcon>
-        Sign Out
-      </MenuItem>
-    </Menu>
+                <MenuItem
+                  onClick={() => {
+                    navigate(`/profile/${decodedUser?.id}`);
+                    handleMenuClose();
+                  }}
+                  sx={{
+                    fontFamily: "Velyra, sans-serif",
+                    color: "#007BFF",
+                    padding: "12px 20px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "rgba(0,123,255,0.05)",
+                      color: "#0056b3",
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: "40px",
+                      color: "#007BFF",
+                    }}
+                  >
+                    <AccountCircle />
+                  </ListItemIcon>
+                  My Profile
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => {
+                    navigate("/studio/dashboard");
+                    handleMenuClose();
+                  }}
+                  sx={{
+                    fontFamily: "Velyra, sans-serif",
+                    color: "#007BFF",
+                    padding: "12px 20px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "rgba(0,123,255,0.05)",
+                      color: "#0056b3",
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: "40px",
+                      color: "#007BFF",
+                    }}
+                  >
+                    <VideoLibrary />
+                  </ListItemIcon>
+                  Go to Studio
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => {
+                    localStorage.removeItem("token");
+                    navigate("/login");
+                    handleMenuClose();
+                  }}
+                  sx={{
+                    fontFamily: "Velyra, sans-serif",
+                    color: "#FF3D00",
+                    padding: "12px 20px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "rgba(255,61,0,0.05)",
+                      color: "#d32f2f",
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: "40px",
+                      color: "#FF3D00",
+                    }}
+                  >
+                    <Logout />
+                  </ListItemIcon>
+                  Sign Out
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => navigate("/login")}
+              sx={{
+                backgroundColor: "#007BFF",
+                borderRadius: "20px",
+                textTransform: "none",
+                fontFamily: "Velyra, sans-serif",
+                padding: "6px 20px",
+                "&:hover": {
+                  backgroundColor: "#0066CC",
+                },
+              }}
+            >
+              Login
+            </Button>
+          )}
         </Box>
       </Toolbar>
     </AppBar>

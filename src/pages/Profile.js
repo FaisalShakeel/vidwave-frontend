@@ -12,472 +12,476 @@ import {
   CircularProgress,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useFetcher, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout";
-import {toast,ToastContainer} from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import ErrorDisplay from "../components/ErrorDisplay";
+
 const Profile = () => {
-  
-  const {id}=useParams()
-  const [activeTab, setActiveTab] = useState(0);
+  const { id } = useParams();
   const navigate = useNavigate();
-  const[user,setUser]=useState({})
-  const[videos,setVideos]=useState([])
-  const[playlists,setPlaylists]=useState([])
-  const[loading,setLoading]=useState(true)
-  const[isMe,setIsMe]=useState(false)
-  const[decodedUser,setDecodedUser]=useState({})
-  const token=localStorage.getItem("token")
-  const[hasSubscribed,setHasSubscribed]=useState(false)
-  const[isSubscribing,setIsSubscribing]=useState(false)
+  const [activeTab, setActiveTab] = useState(0);
+  const [user, setUser] = useState({});
+  const [videos, setVideos] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Add error state
+  const [isMe, setIsMe] = useState(false);
+  const [decodedUser, setDecodedUser] = useState({});
+  const [hasSubscribed, setHasSubscribed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const token = localStorage.getItem("token");
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
-  const alreadySubscribed = () => {
-      if (!user) {
-          console.log("UploadedBy is not defined");
-          return false;
-      }
-  
-      
-  
-      // Ensure followers exists and is an array
-      if (!Array.isArray(user.followers)) {
-          console.log("Followers is not an array or undefined");
-          return false;
-      }
-  
 
-  
-      const isSubscribed = user.followers.includes(decodedUser.id);
-      console.log("Is Subscribed:", isSubscribed);
-  
-      return isSubscribed;
+  const alreadySubscribed = () => {
+    if (!user || !Array.isArray(user.followers)) return false;
+    return user.followers.includes(decodedUser.id);
   };
+
   const subscribeToChannel = async () => {
     setIsSubscribing(true);
     try {
       const response = await axios.post(
         "http://localhost:5000/users/follow",
         { followingId: user._id },
-        { headers: { Authorization: localStorage.getItem("token") } }
+        { headers: { Authorization: token } }
       );
-  
+
       if (response.data.success) {
         toast.success(response.data.message, { style: { fontFamily: "Velyra" } });
-  
-        // Normalize the message for consistent checks
         const message = response.data.message.trim().toLowerCase();
-  
+
         if (message === "followed the user successfully") {
-          console.log("Subscribing");
-          setUser((prevUser) => {
-            const updatedUser = { ...prevUser };
-            const currentFollowers = updatedUser.followers || [];
-            updatedUser.followers = [...currentFollowers, decodedUser.id]; // Add UID to followers
-            return updatedUser;
-          });
+          setUser((prevUser) => ({
+            ...prevUser,
+            followers: [...(prevUser.followers || []), decodedUser.id],
+          }));
         } else if (message === "unfollowed the user successfully") {
-          console.log("Unsubscribing");
-          setUser((prevUser) => {
-            const updatedUser = { ...prevUser };
-            const currentFollowers = updatedUser.followers || [];
-            updatedUser.followers = currentFollowers.filter((id) => id !== decodedUser.id); // Remove UID from followers
-            return updatedUser;
-          });
+          setUser((prevUser) => ({
+            ...prevUser,
+            followers: (prevUser.followers || []).filter((id) => id !== decodedUser.id),
+          }));
         }
       }
     } catch (e) {
-      toast.error(
-        e.response ? e.response.data.message : e.message,
-        { style: { fontFamily: "Velyra" } }
-      );
+      toast.error(e.response ? e.response.data.message : e.message, {
+        style: { fontFamily: "Velyra" },
+      });
     } finally {
       setIsSubscribing(false);
     }
   };
+
   const fetchProfile = async () => {
+    setLoading(true);
+    setError(null); // Reset error state
     try {
-      setLoading(true);
       const response = await axios.get(`http://localhost:5000/users/getprofile/${id}`);
-      console.log("Profile Data",response.data)
       if (response.data.success) {
-        setUser(response.data.user)
-        setVideos(response.data.videos)
-        setPlaylists(response.data.playlists)
-        setLoading(false)
+        setUser(response.data.user);
+        setVideos(response.data.videos);
+        setPlaylists(response.data.playlists);
       } else {
-        toast.error(response.data.message || "Failed to load profile.", {
-          position: "top-right",
-        });
+        setError(response.data.message || "Failed to load profile.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred.", {
-        position: "top-right",
-      });
-    } 
+      setError(error.response?.data?.message || "An error occurred while fetching the profile.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(()=>{
-    try{
-     const decodedToken= jwtDecode(token)
-     setDecodedUser(decodedToken)
-     setIsMe(decodedToken.id==id)
+  useEffect(() => {
+    try {
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        setDecodedUser(decodedToken);
+        setIsMe(decodedToken.id === id);
+      } else {
+        setIsMe(false); // If no token, set isMe to false
+      }
+    } catch (e) {
+      console.error("Error while decoding token:", e);
+      setIsMe(false);
     }
-    catch(e){
-      console.error("Erorr while decoding")
+  }, [token, id]);
+
+  useEffect(() => {
+    if (user && Object.keys(user).length > 0) {
+      const isSubscribed = alreadySubscribed();
+      setHasSubscribed(isSubscribed);
     }
-    
-  },[token])
-  useEffect(()=>{
-    if(user){
-     const isSubscribed= alreadySubscribed()
-     setHasSubscribed(isSubscribed)
-    }
-  },[user])
-  
+  }, [user]);
 
   useEffect(() => {
     fetchProfile();
   }, [id]);
-  if(loading){
-    return(
+
+  if (loading) {
+    return (
       <Layout>
-    <Box style={{height:"100%",minHeight:"100%",width:"100%",maxWidth:"100%",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center"}}>
-
-                <CircularProgress size={40} thickness={7} />
-          
-
-    </Box>
-    </Layout>
-    )
+        <Box
+          sx={{
+            height: "100vh",
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#f8f9ff",
+          }}
+        >
+          <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
+        </Box>
+      </Layout>
+    );
   }
-  else{
+
+  if (error) {
+    return <ErrorDisplay error={error} onRetry={fetchProfile} />;
+  }
 
   return (
-   <Layout> <Box
-   sx={{
-    width: {xs:"100%",md:"95%"}, // Ensures it takes full width of its container
-    maxWidth: "100%", // Prevents overflow beyond visible screen
-    boxSizing: "border-box", // Includes padding and border in width calculations
-    padding: 2,
-    mr:{md:10},
-
-    fontFamily: "Velyra",
-    overflow: "hidden", // Prevents overflow of child elements
-  }}
-    >
-      <ToastContainer/>
-      {/* Back Button */}
+    <Layout>
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          mb: 3,
-          backgroundColor: "#ffffff",
-          borderRadius: 2,
-          boxShadow: 2,
-          padding: "8px 16px",
-          cursor: "pointer",
-          "&:hover": { boxShadow: 4 },
-        }}
-        onClick={() => navigate(-1)}
-      >
-        <IconButton>
-          <ArrowBackIcon sx={{ color: "#007BFF", fontSize: 24 }} />
-        </IconButton>
-        <Typography
-          sx={{
-            ml: 1,
-            fontSize: 16,
-            fontWeight: "bold",
-            fontFamily: "Velyra",
-            color: "#007BFF",
-          }}
-        >
-          Back
-        </Typography>
-      </Box>
-
-      {/* User Info Section */}
-      <Box
-  sx={{
-    display: "flex",
-    flexDirection: { xs: "column", sm: "row" }, // Stacks on small screens, rows on larger ones
-    alignItems: "center",
-    gap: 2, // Space between child elements
-    backgroundColor: "#ffffff", // White background
-    borderRadius: 2, // Rounded corners
-    boxShadow: 3, // Subtle shadow effect
-    p: 3, // Padding inside the box
-    width: "100%", // Ensure it does not exceed the parent’s width
-    maxWidth: "100%", // Prevent potential overflow issues
-    boxSizing: "border-box", // Includes padding and border in width calculations
-    overflow: "hidden", // Avoid overflow content
-  }}
->
-  <Avatar
-    src={user.profilePhotoUrl}
-    alt={user.name}
-    sx={{
-      width: 80, // Adjusted to fit better
-      height: 80,
-      flexShrink: 0, // Prevent avatar from shrinking
-    }}
-  />
-  <Box
-    sx={{
-      flexGrow: 1, // Ensures the text area takes remaining space
-      minWidth: 0, // Prevents text content from expanding parent
-      overflow: "hidden", // Hides overflowing text
-    }}
-  >
-    <Typography
-      variant="h6"
-      sx={{
-        fontFamily: "Velyra",
-        fontWeight: "bold",
-        whiteSpace: "nowrap", // Prevents wrapping for long names
-        overflow: "hidden", // Hides long text
-        textOverflow: "ellipsis", // Adds "..." for overflow
-      }}
-    >
-      {user.name}
-    </Typography>
-    <Typography
-      variant="body2"
-      color="textSecondary"
-      sx={{ mt: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-    >
-      {user.followers.length}
-    </Typography>
-  </Box>
- {isMe?<>
- </>:  <Button
- disabled={isSubscribing}
- onClick={subscribeToChannel}
-    variant="contained"
-    color="primary"
-    sx={{
-      textTransform: "capitalize",
-      fontFamily: "Velyra",
-      fontWeight: "bold",
-      width:"150px",
-      height:"50px",
-      flexShrink: 0, // Prevent button from shrinking
-    }}
-  >
-    {
-      isSubscribing?<CircularProgress style={{width:"20px",height:"20px"}} thickness={10}/>:hasSubscribed?"Subscribed":"Subscribe"
-    }
-  
-  </Button>
- }
-
-</Box>
-
-
-      {/* Tabs Section */}
-      <Box
-        sx={{
-          mt: 4,
-          backgroundColor: "#ffffff",
-          borderRadius: 2,
-          boxShadow: 3,
-          width: "100%", // Ensure tabs container takes full width
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          centered
-          textColor="primary"
-          indicatorColor="primary"
-          sx={{
-            fontFamily: "Velyra",
-            "& .MuiTab-root": {
-              fontWeight: "bold",
-              textTransform: "capitalize",
-              fontFamily: "Velyra",
-            },
-          }}
-        >
-          <Tab label="Videos" />
-          <Tab label="Playlists" />
-          <Tab label="About" />
-        </Tabs>
-      </Box>
-
-      {/* Tab Content */}
-      <Box
-        sx={{
-          overflow:"hidden",
-          mt: 4,
-          maxWidth:"100%",
-          width: "100%", // Full width for smaller devices
-        }}
-      >
-        {/* Videos Tab */}
-        {activeTab === 0 && (
-          <Grid container spacing={3}>
-            {videos.map((video, index) => (
-              <Grid onClick={()=>{
-                navigate(`/watch/${video._id}`)
-              }} item xs={12} md={6} lg={4} key={index}>
-  <Paper
-    sx={{
-      p: 2,
-      backgroundColor: "#ffffff",
-      borderRadius: 2,
-      boxShadow: 3,
-      overflow: "hidden", // Ensures content stays inside
-      height: "300px", // Fixed height for uniformity
-      display: "flex",
-      flexDirection: "column", // Arranges content vertically
-      justifyContent: "space-between", // Space between sections
-      "&:hover": { boxShadow: 6 },
-    }}
-  >
-    <img
-      src={video.thumbnailUrl}
-      alt={video.title}
-      style={{
-        width: "100%",
-        height: "150px", // Ensures consistent height for the thumbnail
-        objectFit: "cover", // Ensures the image fills the space without distortion
-        borderRadius: "8px 8px 0 0", // Rounded top corners only
-      }}
-    />
-    <Box sx={{ mt: 2, flexGrow: 1 }}>
-      <Typography
-        variant="body1"
-        sx={{
+          width: { xs: "100%", md: "95%" },
+          maxWidth: "1600px",
+          margin: "0 auto",
+          padding: { xs: 2, md: 3 },
           fontFamily: "Velyra",
-          fontWeight: "bold",
-          color: "#007BFF",
+          backgroundColor: "#f8f9ff",
+          minHeight: "100vh",
         }}
       >
-        {video.title}
-      </Typography>
-    </Box>
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "space-between",
-        mt: 1,
-        fontFamily: "Velyra", // Applied to both views and likes
-      }}
-    >
-      <Typography variant="body2" sx={{ fontFamily: "Velyra", color: "textSecondary" }}>
-        {video.viewedBy.length} views
-      </Typography>
-      <Typography variant="body2" sx={{ fontFamily: "Velyra", color: "textSecondary" }}>
-        {video.likedBy.length} likes
-      </Typography>
-    </Box>
-  </Paper>
-</Grid>
+        <ToastContainer />
 
-            ))}
-          </Grid>
-        )}
-
-        {/* Playlists Tab */}
-        {activeTab === 1 && (
-          <Grid container spacing={3} sx={{overflow:"hidden"}}>
-            {playlists.map((playlist, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-  <Paper
-    sx={{
-      p: 3, // Increased padding for more spacing
-      backgroundColor: "#ffffff",
-      borderRadius: 1, // Softer rounded corners
-      boxShadow: 4,
-      mb:1,
-      transition: "transform 0.3s, box-shadow 0.3s", // Smooth transition for hover effect
-      "&:hover": {
-        boxShadow: 8, // Larger shadow on hover
-        transform: "translateY(-5px)", // Subtle lift effect
-      },
-    }}
-  >
-    <Typography
-      variant="h6"
-      sx={{
-        fontFamily: "Velyra, sans-serif", // Applying Velyra font
-        fontWeight: "bold",
-        color: "#007BFF",
-        marginBottom: "12px", // Space below title
-        textAlign: "center", // Center-align the title
-        lineHeight: 1.5,
-      }}
-    >
-      {playlist.title}
-    </Typography>
-    <Typography
-      variant="body2"
-      sx={{
-        fontFamily: "Velyra, sans-serif", // Ensuring Velyra is used here as well
-        color: "#757575", // Slightly lighter color for contrast
-        fontSize: "1rem", // Slightly larger font size for better readability
-        fontWeight: "500", // Medium weight for clarity
-        textAlign: "center", // Center-align the video count
-        lineHeight: 1.4,
-      }}
-    >
-      {playlist.videos.length} {playlist.videos.length === 1 ? "video" : "videos"}
-    </Typography>
-  </Paper>
-</Grid>
-
-            ))}
-          </Grid>
-        )}
-
-        {/* About Tab */}
-        {activeTab === 2 && (
-          <Box
+        {/* Back Button */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            mb: 3,
+            backgroundColor: "#ffffff",
+            borderRadius: "12px",
+            boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+            padding: "8px 16px",
+            width: "fit-content",
+            cursor: "pointer",
+            transition: "box-shadow 0.3s",
+            "&:hover": { boxShadow: "0px 6px 18px rgba(0,123,255,0.2)" },
+          }}
+          onClick={() => navigate(-1)}
+        >
+          <IconButton>
+            <ArrowBackIcon sx={{ color: "#007BFF", fontSize: 24 }} />
+          </IconButton>
+          <Typography
             sx={{
-              p: 2,
-              backgroundColor: "#ffffff",
-              borderRadius: 2,
-              boxShadow: 3,
-              width: "100%", // Ensure it does not exceed the parent’s width
-    maxWidth: "100%", // Prevent potential overflow issues
-    boxSizing: "border-box", // Includes padding and border in width calculations
-    overflow: "hidden", // Avoid overflow content
+              ml: 1,
+              fontSize: 16,
+              fontWeight: "bold",
+              fontFamily: "Velyra",
+              color: "#007BFF",
             }}
           >
+            Back
+          </Typography>
+        </Box>
+
+        {/* User Info Section */}
+        <Paper
+          elevation={3}
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: "center",
+            gap: 3,
+            backgroundColor: "#ffffff",
+            borderRadius: "16px",
+            boxShadow: "0px 4px 20px rgba(0,123,255,0.1)",
+            p: 3,
+            width: "100%",
+          }}
+        >
+          <Avatar
+            src={user.profilePhotoUrl}
+            alt={user.name}
+            sx={{
+              width: { xs: 80, sm: 100 },
+              height: { xs: 80, sm: 100 },
+              boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+            }}
+          />
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
-              variant="body1"
+              variant="h5"
               sx={{
                 fontFamily: "Velyra",
                 fontWeight: "bold",
                 color: "#007BFF",
-                mb: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              About
-            </Typography>
-            <Typography variant="body2" sx={{ fontFamily: "Velyra" }}>
-              {user.bio}
+              {user.name || "Unknown User"}
             </Typography>
             <Typography
               variant="body2"
-              color="textSecondary"
-              sx={{ mt: 2, fontFamily: "Velyra" }}
+              sx={{ mt: 1, fontFamily: "Velyra", color: "#666" }}
             >
-              Joined: {user.joinedOn}
+              {user.followers?.length || 0} Followers • {videos.length} Videos
             </Typography>
           </Box>
-        )}
+          {!isMe && (
+            <Button
+              disabled={isSubscribing || !token}
+              onClick={subscribeToChannel}
+              variant="contained"
+              sx={{
+                textTransform: "capitalize",
+                fontFamily: "Velyra",
+                fontWeight: "bold",
+                width: "150px",
+                height: "50px",
+                borderRadius: "8px",
+                backgroundColor: hasSubscribed ? "#666" : "#007BFF",
+                "&:hover": { backgroundColor: hasSubscribed ? "#555" : "#0056b3" },
+              }}
+            >
+              {isSubscribing ? (
+                <CircularProgress sx={{ width: "20px", height: "20px", color: "#fff" }} thickness={10} />
+              ) : hasSubscribed ? (
+                "Subscribed"
+              ) : (
+                "Subscribe"
+              )}
+            </Button>
+          )}
+        </Paper>
+
+        {/* Tabs Section */}
+        <Paper
+          elevation={2}
+          sx={{
+            mt: 4,
+            backgroundColor: "#ffffff",
+            borderRadius: "12px",
+            boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+            overflow: "hidden",
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            centered
+            sx={{
+              fontFamily: "Velyra",
+              "& .MuiTab-root": {
+                fontWeight: "bold",
+                textTransform: "capitalize",
+                fontFamily: "Velyra",
+                color: "#666",
+                "&.Mui-selected": { color: "#007BFF" },
+              },
+              "& .MuiTabs-indicator": { backgroundColor: "#007BFF" },
+            }}
+          >
+            <Tab label="Videos" />
+            <Tab label="Playlists" />
+            <Tab label="About" />
+          </Tabs>
+        </Paper>
+
+        {/* Tab Content */}
+        <Box sx={{ mt: 4 }}>
+          {/* Videos Tab */}
+          {activeTab === 0 && (
+            <Grid container spacing={3}>
+              {videos.length > 0 ? (
+                videos.map((video, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        backgroundColor: "#ffffff",
+                        borderRadius: "12px",
+                        boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+                        height: "300px",
+                        display: "flex",
+                        flexDirection: "column",
+                        transition: "transform 0.3s, box-shadow 0.3s",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0px 6px 18px rgba(0,123,255,0.2)",
+                        },
+                        cursor: "pointer",
+                      }}
+                      onClick={() => navigate(`/watch/${video._id}`)}
+                    >
+                      <img
+                        src={video.thumbnailUrl}
+                        alt={video.title}
+                        style={{
+                          width: "100%",
+                          height: "150px",
+                          objectFit: "cover",
+                          borderRadius: "8px 8px 0 0",
+                        }}
+                      />
+                      <Box sx={{ mt: 2, flexGrow: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontFamily: "Velyra",
+                            fontWeight: "bold",
+                            color: "#007BFF",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {video.title}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mt: 1,
+                          fontFamily: "Velyra",
+                          color: "#666",
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {video.viewedBy.length} views
+                        </Typography>
+                        <Typography variant="body2">
+                          {video.likedBy.length} likes
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                ))
+              ) : (
+                <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontFamily: "Velyra", color: "#666" }}
+                  >
+                    No videos available.
+                  </Typography>
+                </Box>
+              )}
+            </Grid>
+          )}
+
+          {/* Playlists Tab */}
+          {activeTab === 1 && (
+            <Grid container spacing={3}>
+              {playlists.length > 0 ? (
+                playlists.map((playlist, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Paper
+                      sx={{
+                        p: 3,
+                        backgroundColor: "#ffffff",
+                        borderRadius: "12px",
+                        boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+                        transition: "transform 0.3s, box-shadow 0.3s",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0px 6px 18px rgba(0,123,255,0.2)",
+                        },
+                        cursor: "pointer",
+                      }}
+                      onClick={() => navigate(`/playlist/${playlist._id}`)} // Assuming a playlist route exists
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontFamily: "Velyra",
+                          fontWeight: "bold",
+                          color: "#007BFF",
+                          textAlign: "center",
+                        }}
+                      >
+                        {playlist.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: "Velyra",
+                          color: "#666",
+                          textAlign: "center",
+                          mt: 1,
+                        }}
+                      >
+                        {playlist.videos.length}{" "}
+                        {playlist.videos.length === 1 ? "video" : "videos"}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))
+              ) : (
+                <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontFamily: "Velyra", color: "#666" }}
+                  >
+                    No playlists available.
+                  </Typography>
+                </Box>
+              )}
+            </Grid>
+          )}
+
+          {/* About Tab */}
+          {activeTab === 2 && (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                backgroundColor: "#ffffff",
+                borderRadius: "12px",
+                boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "Velyra",
+                  fontWeight: "bold",
+                  color: "#007BFF",
+                  mb: 2,
+                }}
+              >
+                About
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ fontFamily: "Velyra", color: "#333" }}
+              >
+                {user.bio || "No bio available."}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ mt: 2, fontFamily: "Velyra", color: "#666" }}
+              >
+                Joined: {user.joinedOn ? new Date(user.joinedOn).toLocaleDateString() : "Unknown"}
+              </Typography>
+            </Paper>
+          )}
+        </Box>
       </Box>
-    </Box>
     </Layout>
   );
-}
 };
 
 export default Profile;

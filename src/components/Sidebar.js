@@ -37,17 +37,26 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const currentItem = menuItems.find(item => item.path === currentPath||item.path.includes(currentPath.split("/")[1]));
-    if (currentItem) {
-      setSelectedOption(currentItem.text);
+    
+    const matchedItem = menuItems.find(item => {
+      if (item.path === "/") {
+        return currentPath === "/";
+      }
+      return currentPath.startsWith(item.path);
+    });
+
+    if (matchedItem) {
+      // Ensure Home is only selected when exactly on root path
+      if (matchedItem.path === "/" && currentPath !== "/") {
+        return;
+      }
+      setSelectedOption(matchedItem.text);
     }
-  }, [location.pathname, setSelectedOption]);
+  }, [location.pathname, menuItems, setSelectedOption]);
 
   const handleItemClick = (item) => {
     setSelectedOption(item.text);
-    if (item.path) {
-      navigate(item.path);
-    }
+    navigate(item.path);
   };
 
   const sidebarContent = (collapsed) => (
@@ -104,7 +113,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
 
   return (
     <>
-      {/* Persistent Sidebar for Larger Devices */}
+      {/* Previous implementation remains unchanged */}
       <Box
         sx={{
           display: { xs: "none", md: "flex" },
@@ -158,7 +167,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
         </Box>
       </Box>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer remains unchanged */}
       <Drawer
         anchor="left"
         open={isCollapsed}

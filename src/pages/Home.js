@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import moment from "moment";
 import { useNavigate } from "react-router";
+import ErrorDisplay from "../components/ErrorDisplay";
 
 const HomePage = () => {
   const navigate=useNavigate()
@@ -24,25 +25,26 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true); // To show loading state
   const [error, setError] = useState(null); // To handle errors
   const [selectedCategory, setSelectedCategory] = useState("All"); // Selected category filter
+  const fetchVideos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get("http://localhost:5000/videos/get-allvideos");
+      if (response.data.success) {
+        setVideos(response.data.videos);
+      } else {
+        throw new Error("Failed to fetch videos. Please try again later.");
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred while fetching videos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get("http://localhost:5000/videos/get-allvideos");
-        if (response.data.success) {
-          setVideos(response.data.videos);
-        } else {
-          throw new Error("Failed to fetch videos. Please try again later.");
-        }
-      } catch (err) {
-        setError(err.message || "An error occurred while fetching videos.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+   
     fetchVideos();
   }, []);
 
@@ -86,7 +88,7 @@ const HomePage = () => {
       {/* Error State */}
       {error && (
         <Box sx={{ padding: 2 }}>
-          <Alert severity="error">{error}</Alert>
+          <ErrorDisplay error={error} onRetry={fetchVideos}/>
         </Box>
       )}
 

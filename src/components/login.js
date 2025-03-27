@@ -85,6 +85,7 @@ function Login() {
           InputLabelProps={{ style: { fontFamily: "Velyra" } }}
           onChange={(e) => setEmailAddress(e.target.value)}
         />
+        
         <TextField
           fullWidth
           label="Password"
@@ -95,6 +96,7 @@ function Login() {
           InputLabelProps={{ style: { fontFamily: "Velyra" } }}
           onChange={(e) => setPassword(e.target.value)}
         />
+      
       </Box>
 
       {/* Login Button */}

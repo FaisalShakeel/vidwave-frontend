@@ -17,12 +17,15 @@ import {
     ArrowBack, 
 
   } from "@mui/icons-material";
+import ErrorDisplay from "../components/ErrorDisplay";
 
 const PlaylistVideos = () => {
   const { id } = useParams();
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(false);
  const navigate=useNavigate()
+
+ const [error ,setError] = useState(null)
   // Fetch playlist details
   
   const fetchPlaylistDetails = async () => {
@@ -37,16 +40,11 @@ const PlaylistVideos = () => {
       if (response.data.success) {
         setPlaylist(response.data.playlist);
       } else {
-        toast.error(response.data.message, {
-          style: { fontFamily: "Velyra" },
-        });
+      setError(response.data.message || "Failed to fetch playlist videos!")
       }
     } catch (error) {
       console.error("Error fetching playlist details:", error);
-      toast.error(
-        error.response?.data?.message || error.message,
-        { style: { fontFamily: "Velyra" } }
-      );
+      setError(error.response?.data?.message || error.message)
     } finally {
       setLoading(false);
     }
@@ -55,6 +53,12 @@ const PlaylistVideos = () => {
   useEffect(() => {
     fetchPlaylistDetails();
   }, [id]);
+  if(error){
+    return(
+    <Layout>
+      <ErrorDisplay error={error} onRetry={fetchPlaylistDetails}/>
+    </Layout>)
+  }
 
   return (
     <Layout>

@@ -20,28 +20,30 @@ import axios from "axios";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { useSearchQuery } from "../contexts/SearchQueryContext";
+import ErrorDisplay from "../components/ErrorDisplay";
 
 const Search = () => {
-  const{searchQuery,setSearchQuery}=useSearchQuery()
+  const { searchQuery, setSearchQuery } = useSearchQuery();
   const [activeTab, setActiveTab] = useState(0); // 0: Videos, 1: People
-  const[searchParams]=useSearchParams()
-  const query = searchParams.get("query") || "";
-  console.log("Query",query)
+  
+
   const [filters, setFilters] = useState({ date: "", views: "", likes: "", subscribers: "" });
   const [results, setResults] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const location=useLocation()
-  const navigate=useNavigate()
-  const[loading,setLoading]=useState(true)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false); // Start as false, only true during fetch
+  const [error, setError] = useState(null); // Add error state
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-  
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
     setFilters({}); // Reset filters when switching tabs
     setResults([]);
     setCurrentPage(1);
+    setError(null); // Clear error when switching tabs
+    if (searchQuery) handleSearch(); // Trigger search if query exists
   };
 
   const handleFilterChange = (type, value) => {
@@ -49,7 +51,9 @@ const Search = () => {
   };
 
   const handleSearch = async () => {
-    setLoading(true)
+    if (!searchQuery) return; // Don't search if query is empty
+    setLoading(true);
+    setError(null); // Reset error before new request
     try {
       const response = await axios.post("http://localhost:5000/videos/search", {
         query: searchQuery,
@@ -61,11 +65,12 @@ const Search = () => {
       setResults(response.data.results);
       setTotalPages(response.data.totalPages);
     } catch (error) {
-      toast.error(error.response?error.response.data.message:error.message,{style:{fontFamily:"Velyra"}})
-      console.error("Error fetching search results:", error);
-    }
-    finally{
-      setLoading(false)
+      const errorMessage = error.response ? error.response.data.message : error.message;
+      setError(errorMessage || "An error occurred while fetching search results.");
+    
+      setResults([]); // Clear results on error
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,6 +83,7 @@ const Search = () => {
       handleSearch();
     }
   }, [searchQuery]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery); // Update debouncedQuery after delay
@@ -88,13 +94,14 @@ const Search = () => {
 
   useEffect(() => {
     if (debouncedQuery) {
-      // Navigate to the search page with the debounced query value after the delay
       navigate(`/search/?query=${debouncedQuery}`);
     }
-  }, [debouncedQuery, navigate]); // Only navigate when debouncedQuery changes
+  }, [debouncedQuery, navigate]);
 
   useEffect(() => {
-    handleSearch();
+    if (searchQuery) {
+      handleSearch();
+    }
   }, [currentPage, filters]);
 
   const renderFilters = () => {
@@ -105,8 +112,8 @@ const Search = () => {
           sx={{
             display: "flex",
             flexDirection: { xs: "column", sm: "column", md: "row" },
-            justifyContent:{xs:"center",sm:"center",md:"start"},
-            alignItems:{xs:"center",sm:"center",md:"start"},
+            justifyContent: { xs: "center", sm: "center", md: "start" },
+            alignItems: { xs: "center", sm: "center", md: "start" },
             gap: 2,
             mt: 2,
           }}
@@ -201,29 +208,31 @@ const Search = () => {
 
   const renderResults = () => {
     if (!searchQuery) {
-      return <Typography sx={{ fontFamily: "Velyra" }}>No Results Found</Typography>;
+      return (
+        <Typography sx={{ fontFamily: "Velyra", textAlign: "center", mt: 2 }}>
+          Please enter a search query to see results.
+        </Typography>
+      );
+    }
+
+    if (error) {
+      return <ErrorDisplay error={error} onRetry={handleSearch} />;
     }
 
     return loading ? (
-      <Box sx={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-
-      <CircularProgress thickness={7} sx={{height:"14px",width:"14px"}}  />
-
-
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", mt: 4 }}>
+        <CircularProgress thickness={7} sx={{ height: "40px", width: "40px", color: "#007BFF" }} />
       </Box>
     ) : results.length > 0 ? (
       results.map((item, index) => (
         <Box
-        onClick={()=>{
-          if(activeTab==0){
-            navigate(`/watch/${item._id}`)
-          }
-          else{
-            navigate(`/profile/${item._id}`)
-
-
-          }
-        }}
+          onClick={() => {
+            if (activeTab === 0) {
+              navigate(`/watch/${item._id}`);
+            } else {
+              navigate(`/profile/${item._id}`);
+            }
+          }}
           key={index}
           sx={{
             display: "flex",
@@ -233,6 +242,8 @@ const Search = () => {
             borderRadius: "8px",
             boxShadow: 1,
             alignItems: "center",
+            cursor: "pointer",
+            "&:hover": { backgroundColor: "#f5f5f5" },
             "@media (min-width: 768px)": {
               gap: 4,
               p: 3,
@@ -267,6 +278,7 @@ const Search = () => {
                 fontWeight: "bold",
                 fontFamily: "Velyra",
                 fontSize: "1rem",
+                color: "#007BFF",
                 "@media (min-width: 768px)": { fontSize: "1.2rem" },
               }}
             >
@@ -300,63 +312,68 @@ const Search = () => {
         No results found.
       </Typography>
     );
-    
   };
 
   return (
     <Layout>
-      <Box sx={{ padding: 2, maxWidth: "1200px", margin: "0 auto" }}>
+      <Box sx={{ padding: 2, maxWidth: "1200px", margin: "0 auto", backgroundColor: "#f8f9ff" }}>
         {/* Back Button */}
         <Button
           startIcon={<ArrowBack />}
           sx={{ fontFamily: "Velyra", color: "#007BFF", mb: 2 }}
-          onClick={() =>{navigate("/",{replace:true})}}
+          onClick={() => navigate("/", { replace: true })}
         >
           Back
         </Button>
-<ToastContainer/>
+        <ToastContainer />
+
         {/* Search Input */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-  <Input
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    placeholder="Search..."
-    fullWidth
-    disableUnderline
-    sx={{
-      fontFamily: "Velyra",
-      borderBottom: "1px solid #ccc",
-      fontSize: "16px",
-      paddingRight: "40px", // Adding space for the right icon
-      width: { xs: "100%", sm: "80%" }, // Adjust width for larger devices
-    }}
-  />
-  <IconButton
-    onClick={(e) => {
-      e.preventDefault();
-      const searchParams = new URLSearchParams(location.search);
-      searchParams.set("query", searchQuery);
-
-      // Update the URL
-      navigate(`/search/?query=${searchQuery}`);
-      handleSearch();
-    }}
-    sx={{
-      position: "absolute", // Positioning the icon inside the input
-      right: "10px", // Placing it at the right side
-      color: "#007BFF",
-    }}
-  >
-    
-  </IconButton>
-</Box>
-
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, position: "relative" }}>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search..."
+            fullWidth
+            disableUnderline
+            sx={{
+              fontFamily: "Velyra",
+              borderBottom: "1px solid #ccc",
+              fontSize: "16px",
+              paddingRight: "40px",
+              width: { xs: "100%", sm: "80%" },
+              backgroundColor: "#fff",
+              borderRadius: "4px",
+              padding: "8px",
+            }}
+          />
+          <IconButton
+            onClick={(e) => {
+              e.preventDefault();
+              const searchParams = new URLSearchParams(location.search);
+              searchParams.set("query", searchQuery);
+              navigate(`/search/?query=${searchQuery}`);
+              handleSearch();
+            }}
+            sx={{
+              position: "absolute",
+              right: "10px",
+              color: "#007BFF",
+            }}
+          >
+            <SearchIcon />
+          </IconButton>
+        </Box>
 
         {/* Tabs */}
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          sx={{ mb: 2, "& .MuiTab-root": { fontFamily: "Velyra", fontWeight: "bold" } }}
+          sx={{
+            mb: 2,
+            "& .MuiTab-root": { fontFamily: "Velyra", fontWeight: "bold", color: "#666" },
+            "& .Mui-selected": { color: "#007BFF" },
+            "& .MuiTabs-indicator": { backgroundColor: "#007BFF" },
+          }}
         >
           <Tab label="Videos" />
           <Tab label="People" />
@@ -369,14 +386,14 @@ const Search = () => {
         <Box sx={{ mt: 4 }}>{renderResults()}</Box>
 
         {/* Pagination */}
-         {results.length > 0 &&searchQuery && (
+        {results.length > 0 && searchQuery && !error && (
           <Pagination
             count={totalPages}
             page={currentPage}
             onChange={handlePageChange}
             sx={{ mt: 4, display: "flex", justifyContent: "center" }}
           />
-        )} 
+        )}
       </Box>
     </Layout>
   );

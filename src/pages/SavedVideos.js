@@ -8,29 +8,58 @@ import {
   Typography,
   Box,
   Avatar,
-  Divider,
-  Chip,
   CircularProgress,
-  Alert,
+  Button,
+  Paper,
 } from "@mui/material";
+import LockIcon from "@mui/icons-material/Lock";
+import { jwtDecode } from "jwt-decode";
 import moment from "moment";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
+import ErrorDisplay from "../components/ErrorDisplay";
 
 const SavedVideos = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate();
+  const [savedVideos, setSavedVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-
-  const [savedVideos, setSavedVideos] = useState([]); // To store the fetched videos
-  const [loading, setLoading] = useState(true); // To show loading state
-  const [error, setError] = useState(null); // To handle errors
-
+  const checkAuthentication = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsAuthenticated(false);
+      return false;
+    }
+    try {
+      const decodedToken = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      if (decodedToken.exp < currentTime) {
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
+        return false;
+      }
+      setIsAuthenticated(true);
+      return true;
+    } catch (e) {
+      setIsAuthenticated(false);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const fetchSavedVideos = async () => {
+      if (!checkAuthentication()) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get("http://localhost:5000/videos/get-saved-videos",{headers:{"Authorization":localStorage.getItem("token")}});
+        const response = await axios.get("http://localhost:5000/videos/get-saved-videos", {
+          headers: { Authorization: localStorage.getItem("token") },
+        });
         if (response.data.success) {
           setSavedVideos(response.data.savedVideos);
         } else {
@@ -46,36 +75,115 @@ const SavedVideos = () => {
     fetchSavedVideos();
   }, []);
 
-
- 
+  const renderLoginPrompt = () => (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "80vh",
+        backgroundColor: "#f8f9ff",
+        padding: 2,
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          padding: 4,
+          borderRadius: "16px",
+          textAlign: "center",
+          maxWidth: "500px",
+          width: "100%",
+          backgroundColor: "#ffffff",
+          boxShadow: "0px 4px 20px rgba(0,123,255,0.1)",
+        }}
+      >
+        <LockIcon sx={{ fontSize: 60, color: "#007BFF", mb: 2 }} />
+        <Typography
+          variant="h5"
+          sx={{ fontFamily: "Velyra", fontWeight: "bold", color: "#007BFF", mb: 2 }}
+        >
+          Please Log In
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{ fontFamily: "Velyra", color: "#666", mb: 3 }}
+        >
+          You need to be logged in to view your saved videos. Sign in to access your collection!
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/login")}
+          sx={{
+            fontFamily: "Velyra",
+            fontWeight: "bold",
+            backgroundColor: "#007BFF",
+            borderRadius: "8px",
+            padding: "10px 20px",
+            "&:hover": { backgroundColor: "#0056b3" },
+          }}
+        >
+          Log In
+        </Button>
+      </Paper>
+    </Box>
+  );
 
   return (
     <Layout>
-      {/* Category Selection Section */}
-      
-
       {/* Loading State */}
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-          <CircularProgress size={40} thickness={7} />
+          <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
         </Box>
       )}
 
+      {/* Authentication Check */}
+      {!loading && !isAuthenticated && renderLoginPrompt()}
+
       {/* Error State */}
-      {error && (
-        <Box sx={{ padding: 2 }}>
-          <Alert severity="error">{error}</Alert>
-        </Box>
+      {!loading && isAuthenticated && error && (
+        <ErrorDisplay
+          error={error}
+          onRetry={() => {
+            setLoading(true);
+            setError(null);
+            const fetchSavedVideos = async () => {
+              try {
+                const response = await axios.get("http://localhost:5000/videos/get-saved-videos", {
+                  headers: { Authorization: localStorage.getItem("token") },
+                });
+                if (response.data.success) {
+                  setSavedVideos(response.data.savedVideos);
+                } else {
+                  throw new Error("Failed to fetch saved videos. Please try again later.");
+                }
+              } catch (err) {
+                setError(err.message || "An error occurred while fetching saved videos.");
+              } finally {
+                setLoading(false);
+              }
+            };
+            fetchSavedVideos();
+          }}
+        />
       )}
 
       {/* Video Grid Section */}
-      {!loading && !error && (
-        <Grid container spacing={3} sx={{ padding: 3, backgroundColor: "#fff" }}>
+      {!loading && isAuthenticated && !error && (
+        <Grid container spacing={3} sx={{ padding: 3, backgroundColor: "#f8f9ff" }}>
           {savedVideos.length > 0 ? (
             savedVideos.map((video, index) => (
-              <Grid onClick={()=>{
-                navigate(`/watch/${video._id}`)
-              }} item xs={12} sm={12} md={6} lg={6} xl={4} key={video._id || index}>
+              <Grid
+                onClick={() => navigate(`/watch/${video._id}`)}
+                item
+                xs={12}
+                sm={12}
+                md={6}
+                lg={6}
+                xl={4}
+                key={video._id || index}
+              >
                 <Card
                   sx={{
                     boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
@@ -84,11 +192,12 @@ const SavedVideos = () => {
                     flexDirection: "column",
                     height: "100%",
                     overflow: "hidden",
-                    ":hover": {
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                    "&:hover": {
                       transform: "scale(1.05)",
-                      transition: "0.3s ease",
                       boxShadow: "0px 8px 20px rgba(0,0,0,0.15)",
                     },
+                    backgroundColor: "#ffffff",
                   }}
                 >
                   {/* Video Thumbnail */}
@@ -109,7 +218,7 @@ const SavedVideos = () => {
                       variant="h6"
                       sx={{
                         fontFamily: "Velyra",
-                        color: "#333",
+                        color: "#007BFF",
                         fontWeight: "bold",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -123,9 +232,9 @@ const SavedVideos = () => {
                     <Box sx={{ marginTop: 2, display: "flex", alignItems: "center" }}>
                       <Avatar
                         src={video.uploadedByProfilePhotoUrl || "https://via.placeholder.com/50"}
-                        sx={{ width: 50, height: 50, marginRight: 2 }}
+                        sx={{ width: 50, height: 50, marginRight: 2, boxShadow: "0px 2px 4px rgba(0,0,0,0.1)" }}
                       />
-                      <Typography variant="body2" sx={{ fontFamily: "Velyra", color: "#555" }}>
+                      <Typography variant="body2" sx={{ fontFamily: "Velyra", color: "#666" }}>
                         {video.uploadedByName || "Unknown Uploader"}
                       </Typography>
                     </Box>
@@ -140,13 +249,13 @@ const SavedVideos = () => {
                     >
                       <Typography
                         variant="body2"
-                        sx={{ fontFamily: "Velyra", color: "#555", fontSize: "0.875rem" }}
+                        sx={{ fontFamily: "Velyra", color: "#666", fontSize: "0.875rem" }}
                       >
                         {video.viewedBy?.length || 0} views
                       </Typography>
                       <Typography
                         variant="body2"
-                        sx={{ fontFamily: "Velyra", color: "#555", fontSize: "0.875rem" }}
+                        sx={{ fontFamily: "Velyra", color: "#666", fontSize: "0.875rem" }}
                       >
                         {video.likedBy?.length || 0} likes
                       </Typography>
@@ -158,7 +267,7 @@ const SavedVideos = () => {
                       sx={{
                         fontFamily: "Velyra",
                         textAlign: "center",
-                        color: "#555",
+                        color: "#666",
                         fontSize: "0.875rem",
                         marginTop: 1,
                       }}
@@ -170,17 +279,18 @@ const SavedVideos = () => {
               </Grid>
             ))
           ) : (
-            <Typography
-              variant="h6"
-              sx={{
-                fontFamily: "Velyra",
-                color: "#555",
-                textAlign: "center",
-                margin: "2rem auto",
-              }}
-            >
-              No saved videos!.
-            </Typography>
+            <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "Velyra",
+                  color: "#666",
+                  textAlign: "center",
+                }}
+              >
+                You haven’t saved any videos yet!
+              </Typography>
+            </Box>
           )}
         </Grid>
       )}
