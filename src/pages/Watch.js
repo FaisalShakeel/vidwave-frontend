@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -20,6 +20,7 @@ import {
   Divider,
   FormControl,
   InputLabel,
+  IconButton,
 } from "@mui/material";
 import ReactPlayer from "react-player";
 import { toast, ToastContainer } from "react-toastify";
@@ -32,6 +33,7 @@ import {
   PlaylistAdd,
   Add,
   Folder,
+  Close,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -74,6 +76,7 @@ const Watch = () => {
   const [commentId, setCommentId] = useState("");
   const [isMe, setIsMe] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const commentInputRef = useRef(null);
 
   const checkAuthentication = () => {
     const token = localStorage.getItem("token");
@@ -152,7 +155,6 @@ const Watch = () => {
       return;
     }
     setPlaylistDialogOpen(true);
-    fetchUserPlaylists();
   };
 
   const replyToComment = async () => {
@@ -404,18 +406,37 @@ const Watch = () => {
     }
   }, [uploadedBy, UID, isAuthenticated]);
 
+  useEffect(()=>{
+    if(isAuthenticated)
+    {
+    fetchUserPlaylists();
+    }
+  },[isAuthenticated])
+
   useEffect(() => {
     if (!playlistsLoading && isAuthenticated) {
       isAlreadySaved();
     }
   }, [playlistsLoading, userPlaylists]);
 
-  // Prioritize error display first
+
+  const handleReplyClick = (name, id) => {
+    setReplyingToName(name);
+    setCommentId(id);
+    commentInputRef.current?.scrollIntoView({ behavior: "smooth" });
+    commentInputRef.current?.focus();
+  };
+
+  const clearReply = () => {
+    setReplyingToName("");
+    setCommentId("");
+    setNewComment("");
+  };
+
   if (error) {
     return <ErrorDisplay error={error} onRetry={getVideoDetails} />;
   }
 
-  // Show loading spinner only if still loading and no error
   if (loading) {
     return (
       <Layout>
@@ -425,9 +446,7 @@ const Watch = () => {
       </Layout>
     );
   }
- 
 
-  // Render the main content only if no error and not loading
   return (
     <Layout>
       <Box sx={{ padding: { xs: 1, md: 2 }, overflowX: "hidden", backgroundColor: "#f8f9ff" }}>
@@ -457,7 +476,6 @@ const Watch = () => {
           }}
         >
           <Box sx={{ flex: 1, width: "100%" }}>
-            {/* Video Section */}
             <Paper
               elevation={3}
               sx={{
@@ -476,7 +494,6 @@ const Watch = () => {
                   aspectRatio: "16/9",
                   mx: "auto",
                   position: "relative",
-                  
                 }}
               >
                 {video?.url ? (
@@ -539,12 +556,16 @@ const Watch = () => {
                     disabled={!isAuthenticated || isLiking}
                     onClick={likeVideo}
                     startIcon={<ThumbUp />}
-                    variant="outlined"
+                    variant={isLiked ? "contained" : "outlined"}
                     sx={{
                       fontFamily: "Velyra",
-                      color: isLiked ? "#007BFF" : "#333",
-                      borderColor: isLiked ? "#007BFF" : "#ccc",
-                      "&:hover": { backgroundColor: isAuthenticated ? "#e7f3ff" : "transparent", borderColor: "#007BFF" },
+                      color: isLiked ? "#fff" : "#007BFF",
+                      backgroundColor: isLiked ? "#007BFF" : "transparent",
+                      borderColor: "#007BFF",
+                      "&:hover": {
+                        backgroundColor: isLiked ? "#0056b3" : "#e7f3ff",
+                        borderColor: "#007BFF",
+                      },
                     }}
                   >
                     {isLiking ? "Processing..." : isLiked ? "Liked" : "Like"} (
@@ -553,12 +574,16 @@ const Watch = () => {
                   <Button
                     disabled={!isAuthenticated || isUnsaving}
                     startIcon={<SaveAlt />}
-                    variant="outlined"
+                    variant={isSaved ? "contained" : "outlined"}
                     sx={{
                       fontFamily: "Velyra",
-                      color: isSaved ? "#007BFF" : "#333",
-                      borderColor: isSaved ? "#007BFF" : "#ccc",
-                      "&:hover": { backgroundColor: isAuthenticated ? "#e7f3ff" : "transparent", borderColor: "#007BFF" },
+                      color: isSaved ? "#fff" : "#007BFF",
+                      backgroundColor: isSaved ? "#007BFF" : "transparent",
+                      borderColor: "#007BFF",
+                      "&:hover": {
+                        backgroundColor: isSaved ? "#0056b3" : "#e7f3ff",
+                        borderColor: "#007BFF",
+                      },
                     }}
                     onClick={() =>
                       isSaved ? handleAddToPlaylist(selectedPlaylistId) : handleSaveClick()
@@ -617,7 +642,6 @@ const Watch = () => {
               </Box>
             </Paper>
 
-            {/* Creator Info */}
             <Paper
               elevation={2}
               sx={{
@@ -658,13 +682,14 @@ const Watch = () => {
                     textTransform: "capitalize",
                     height: "43px",
                     width: "150px",
-                    borderRadius: "8px",
-                    backgroundColor: alreadySubscribed ? "#666" : "#007BFF",
-                    "&:hover": { backgroundColor: isAuthenticated ? (alreadySubscribed ? "#555" : "#0056b3") : "#666" },
+                    borderRadius: "6px",
+                    backgroundColor: "#007BFF",
+                    color: "#fff",
+                    "&:hover": { backgroundColor: isAuthenticated ? "#0056b3" : "#007BFF" },
                   }}
                 >
                   {isSubscribing ? (
-                    <CircularProgress sx={{ color: "#fff", height: "18px", width: "18px" }} />
+                    <CircularProgress style={{ color: "#fff", height: "16px", width: "16px", fontWeight: "bold" }} thickness={10} />
                   ) : alreadySubscribed ? (
                     "Subscribed"
                   ) : (
@@ -674,7 +699,6 @@ const Watch = () => {
               )}
             </Paper>
 
-            {/* Comments Section */}
             <Paper
               elevation={2}
               sx={{
@@ -694,25 +718,40 @@ const Watch = () => {
                 Comments ({video.comments?.length || 0})
               </Typography>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <Input
-                  placeholder={
-                    replyingToName ? `Replying to @${replyingToName}` : "Add a comment..."
-                  }
-                  fullWidth
-                  multiline
-                  rows={2}
-                  value={replyingToName ? `@${replyingToName}: ${newComment}` : newComment}
-                  onChange={(e) => setNewComment(e.target.value.replace(`@${replyingToName}: `, ""))}
-                  sx={{
-                    fontFamily: "Velyra",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f5f5f5",
-                    "&:focus": { backgroundColor: "#fff", boxShadow: "0 0 5px #007BFF" },
-                  }}
-                  disabled={!isAuthenticated}
-                />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }} ref={commentInputRef}>
+                <Box sx={{ position: "relative", width: "100%" }}>
+                  <Input
+                    placeholder={
+                      replyingToName ? `Replying to @${replyingToName}` : "Add a comment..."
+                    }
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={replyingToName ? `@${replyingToName}: ${newComment}` : newComment}
+                    onChange={(e) => setNewComment(e.target.value.replace(`@${replyingToName}: `, ""))}
+                    sx={{
+                      fontFamily: "Velyra",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      backgroundColor: "#f5f5f5",
+                      "&:focus": { backgroundColor: "#fff", boxShadow: "0 0 5px #007BFF" },
+                    }}
+                    disabled={!isAuthenticated}
+                  />
+                  {replyingToName && (
+                    <IconButton
+                      onClick={clearReply}
+                      sx={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        color: "#007BFF",
+                      }}
+                    >
+                      <Close />
+                    </IconButton>
+                  )}
+                </Box>
                 <Button
                   disabled={!isAuthenticated || isCommenting}
                   onClick={() => (replyingToName ? replyToComment() : addComment())}
@@ -723,11 +762,12 @@ const Watch = () => {
                     width: "100px",
                     textTransform: "none",
                     backgroundColor: "#007BFF",
+                    color: "#fff",
                     "&:hover": { backgroundColor: isAuthenticated ? "#0056b3" : "#007BFF" },
                   }}
                 >
                   {isCommenting ? (
-                    <CircularProgress sx={{ color: "#fff", height: "18px", width: "18px" }} />
+                    <CircularProgress style={{ color: "#fff", height: "16px", width: "16px", fontWeight: "bold" }} thickness={10} />
                   ) : (
                     "Comment"
                   )}
@@ -753,10 +793,7 @@ const Watch = () => {
                         {comment.text}
                       </Typography>
                       <Button
-                        onClick={() => {
-                          setReplyingToName(comment.name);
-                          setCommentId(comment._id);
-                        }}
+                        onClick={() => handleReplyClick(comment.name, comment._id)}
                         sx={{ fontFamily: "Velyra", fontSize: "14px", color: "#007BFF" }}
                         disabled={!isAuthenticated}
                       >
@@ -791,10 +828,7 @@ const Watch = () => {
                               {reply.text}
                             </Typography>
                             <Button
-                              onClick={() => {
-                                setReplyingToName(reply.name);
-                                setCommentId(comment._id);
-                              }}
+                              onClick={() => handleReplyClick(reply.name, comment._id)}
                               sx={{ fontFamily: "Velyra", fontSize: "14px", color: "#007BFF" }}
                               disabled={!isAuthenticated}
                             >
@@ -817,7 +851,6 @@ const Watch = () => {
             </Paper>
           </Box>
 
-          {/* Related Videos */}
           <Paper
             elevation={2}
             sx={{
@@ -888,7 +921,6 @@ const Watch = () => {
           </Paper>
         </Box>
 
-        {/* Save to Playlist Dialog */}
         <Dialog open={playlistDialogOpen} onClose={() => setPlaylistDialogOpen(false)} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ fontFamily: "Velyra", color: "#007BFF" }}>Save to Playlist</DialogTitle>
           <DialogContent>
@@ -973,7 +1005,6 @@ const Watch = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Create New Playlist Dialog */}
         <Dialog
           open={newPlaylistDialogOpen}
           onClose={() => setNewPlaylistDialogOpen(false)}
@@ -1034,6 +1065,7 @@ const Watch = () => {
               sx={{
                 fontFamily: "Velyra",
                 backgroundColor: "#007BFF",
+                color: "#fff",
                 "&:hover": { backgroundColor: isAuthenticated ? "#0056b3" : "#007BFF" },
               }}
             >
