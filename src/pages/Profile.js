@@ -28,7 +28,7 @@ const Profile = () => {
   const [videos, setVideos] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Add error state
+  const [error, setError] = useState(null);
   const [isMe, setIsMe] = useState(false);
   const [decodedUser, setDecodedUser] = useState({});
   const [hasSubscribed, setHasSubscribed] = useState(false);
@@ -80,7 +80,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     setLoading(true);
-    setError(null); // Reset error state
+    setError(null);
     try {
       const response = await axios.get(`http://localhost:5000/users/getprofile/${id}`);
       if (response.data.success) {
@@ -104,7 +104,7 @@ const Profile = () => {
         setDecodedUser(decodedToken);
         setIsMe(decodedToken.id === id);
       } else {
-        setIsMe(false); // If no token, set isMe to false
+        setIsMe(false);
       }
     } catch (e) {
       console.error("Error while decoding token:", e);
@@ -136,7 +136,7 @@ const Profile = () => {
             backgroundColor: "#f8f9ff",
           }}
         >
-          <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
+          <CircularProgress size={30} thickness={6} sx={{ color: "#007BFF" }} />
         </Box>
       </Layout>
     );
@@ -150,13 +150,14 @@ const Profile = () => {
     <Layout>
       <Box
         sx={{
-          width: { xs: "100%", md: "95%" },
-          maxWidth: "1600px",
+          width: { xs: "90%", md: "90%" },
+          maxWidth: "1000px",
           margin: "0 auto",
-          padding: { xs: 2, md: 3 },
+          padding: { xs: 1, md: 2 },
           fontFamily: "Velyra",
           backgroundColor: "#f8f9ff",
           minHeight: "100vh",
+          overflowX: "hidden",
         }}
       >
         <ToastContainer />
@@ -166,25 +167,25 @@ const Profile = () => {
           sx={{
             display: "flex",
             alignItems: "center",
-            mb: 3,
+            mb: 2,
             backgroundColor: "#ffffff",
-            borderRadius: "12px",
-            boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
-            padding: "8px 16px",
+            borderRadius: "8px",
+            boxShadow: "0px 2px 8px rgba(0,123,255,0.1)",
+            padding: "6px 12px",
             width: "fit-content",
             cursor: "pointer",
             transition: "box-shadow 0.3s",
-            "&:hover": { boxShadow: "0px 6px 18px rgba(0,123,255,0.2)" },
+            "&:hover": { boxShadow: "0px 4px 12px rgba(0,123,255,0.2)" },
           }}
           onClick={() => navigate(-1)}
         >
           <IconButton>
-            <ArrowBackIcon sx={{ color: "#007BFF", fontSize: 24 }} />
+            <ArrowBackIcon sx={{ color: "#007BFF", fontSize: 20 }} />
           </IconButton>
           <Typography
             sx={{
-              ml: 1,
-              fontSize: 16,
+              ml: 0.5,
+              fontSize: "0.95rem",
               fontWeight: "bold",
               fontFamily: "Velyra",
               color: "#007BFF",
@@ -196,26 +197,27 @@ const Profile = () => {
 
         {/* User Info Section */}
         <Paper
-          elevation={3}
+          elevation={2}
           sx={{
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
             alignItems: "center",
-            gap: 3,
+            gap: 2,
             backgroundColor: "#ffffff",
-            borderRadius: "16px",
-            boxShadow: "0px 4px 20px rgba(0,123,255,0.1)",
-            p: 3,
+            borderRadius: "12px",
+            boxShadow: "0px 2px 10px rgba(0,123,255,0.1)",
+            p: 2,
             width: "100%",
+            maxWidth: { xs: "90%", md: "98%" },
           }}
         >
           <Avatar
             src={user.profilePhotoUrl}
             alt={user.name}
             sx={{
-              width: { xs: 80, sm: 100 },
-              height: { xs: 80, sm: 100 },
-              boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+              width: { xs: 60, sm: 80 },
+              height: { xs: 60, sm: 80 },
+              boxShadow: "0px 1px 4px rgba(0,0,0,0.1)",
             }}
           />
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -224,7 +226,9 @@ const Profile = () => {
               sx={{
                 fontFamily: "Velyra",
                 fontWeight: "bold",
+                textAlign: { xs: "center", md: "inherit" },
                 color: "#007BFF",
+                fontSize: "1.25rem",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -234,12 +238,41 @@ const Profile = () => {
             </Typography>
             <Typography
               variant="body2"
-              sx={{ mt: 1, fontFamily: "Velyra", color: "#666" }}
+              sx={{
+                mt: 0.5,
+                ml:{xs:4,md:0},
+                fontFamily: "Velyra",
+                color: "#666",
+                fontSize: "0.75rem",
+              }}
             >
-              {user.followers?.length || 0} Followers • {videos.length} Videos
+              {user.followers?.length || 0} Followers
             </Typography>
           </Box>
-          {!isMe && (
+          {isMe ? (
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/studio/settings")}
+              sx={{
+                textTransform: "capitalize",
+                fontFamily: "Velyra",
+                fontWeight: "bold",
+                mr: { md: 2 },
+                width: "120px",
+                height: "36px",
+                borderRadius: "6px",
+                borderColor: "#007BFF",
+                color: "#007BFF",
+                fontSize: "0.85rem",
+                "&:hover": {
+                  borderColor: "#0056b3",
+                  backgroundColor: "#F0F7FF",
+                },
+              }}
+            >
+              Edit Profile
+            </Button>
+          ) : (
             <Button
               disabled={isSubscribing || !token}
               onClick={subscribeToChannel}
@@ -248,15 +281,17 @@ const Profile = () => {
                 textTransform: "capitalize",
                 fontFamily: "Velyra",
                 fontWeight: "bold",
-                width: "150px",
-                height: "50px",
-                borderRadius: "8px",
-                backgroundColor: hasSubscribed ? "#666" : "#007BFF",
-                "&:hover": { backgroundColor: hasSubscribed ? "#555" : "#0056b3" },
+                mr: { md: 2 },
+                width: "125px",
+                height: "45px",
+                borderRadius: "50px",
+                backgroundColor: hasSubscribed ? "#007BFF" : "#007BFF",
+                fontSize: "0.85rem",
+                
               }}
             >
               {isSubscribing ? (
-                <CircularProgress sx={{ width: "20px", height: "20px", color: "#fff" }} thickness={10} />
+                <CircularProgress style={{ width: "16px", height: "16px", color: "#fff" }} thickness={10} />
               ) : hasSubscribed ? (
                 "Subscribed"
               ) : (
@@ -270,11 +305,12 @@ const Profile = () => {
         <Paper
           elevation={2}
           sx={{
-            mt: 4,
+            mt: 2,
             backgroundColor: "#ffffff",
-            borderRadius: "12px",
-            boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+            borderRadius: "8px",
+            boxShadow: "0px 2px 8px rgba(0,123,255,0.1)",
             overflow: "hidden",
+            maxWidth: "100%",
           }}
         >
           <Tabs
@@ -288,6 +324,7 @@ const Profile = () => {
                 textTransform: "capitalize",
                 fontFamily: "Velyra",
                 color: "#666",
+                fontSize: "0.95rem",
                 "&.Mui-selected": { color: "#007BFF" },
               },
               "& .MuiTabs-indicator": { backgroundColor: "#007BFF" },
@@ -300,26 +337,26 @@ const Profile = () => {
         </Paper>
 
         {/* Tab Content */}
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ mt: 2, maxWidth: "100%" }}>
           {/* Videos Tab */}
           {activeTab === 0 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               {videos.length > 0 ? (
                 videos.map((video, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
                     <Paper
                       sx={{
-                        p: 2,
+                        p: 1,
                         backgroundColor: "#ffffff",
-                        borderRadius: "12px",
-                        boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
-                        height: "300px",
+                        borderRadius: "8px",
+                        boxShadow: "0px 2px 8px rgba(0,123,255,0.1)",
+                        height: "240px",
                         display: "flex",
                         flexDirection: "column",
                         transition: "transform 0.3s, box-shadow 0.3s",
                         "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0px 6px 18px rgba(0,123,255,0.2)",
+                          transform: "translateY(-3px)",
+                          boxShadow: "0px 4px 12px rgba(0,123,255,0.2)",
                         },
                         cursor: "pointer",
                       }}
@@ -330,18 +367,19 @@ const Profile = () => {
                         alt={video.title}
                         style={{
                           width: "100%",
-                          height: "150px",
+                          height: "120px",
                           objectFit: "cover",
-                          borderRadius: "8px 8px 0 0",
+                          borderRadius: "6px 6px 0 0",
                         }}
                       />
-                      <Box sx={{ mt: 2, flexGrow: 1 }}>
+                      <Box sx={{ mt: 1, flexGrow: 1 }}>
                         <Typography
                           variant="body1"
                           sx={{
                             fontFamily: "Velyra",
                             fontWeight: "bold",
                             color: "#007BFF",
+                            fontSize: "0.95rem",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -354,15 +392,27 @@ const Profile = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
-                          mt: 1,
+                          mt: 0.5,
                           fontFamily: "Velyra",
                           color: "#666",
                         }}
                       >
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "Velyra",
+                            fontSize: "0.75rem",
+                          }}
+                        >
                           {video.viewedBy.length} views
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "Velyra",
+                            fontSize: "0.75rem",
+                          }}
+                        >
                           {video.likedBy.length} likes
                         </Typography>
                       </Box>
@@ -370,10 +420,14 @@ const Profile = () => {
                   </Grid>
                 ))
               ) : (
-                <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
+                <Box sx={{ width: "100%", textAlign: "center", py: 2 }}>
                   <Typography
                     variant="body1"
-                    sx={{ fontFamily: "Velyra", color: "#666" }}
+                    sx={{
+                      fontFamily: "Velyra",
+                      color: "#666",
+                      fontSize: "1rem",
+                    }}
                   >
                     No videos available.
                   </Typography>
@@ -384,24 +438,24 @@ const Profile = () => {
 
           {/* Playlists Tab */}
           {activeTab === 1 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               {playlists.length > 0 ? (
                 playlists.map((playlist, index) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
                     <Paper
                       sx={{
-                        p: 3,
+                        p: 2,
                         backgroundColor: "#ffffff",
-                        borderRadius: "12px",
-                        boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+                        borderRadius: "8px",
+                        boxShadow: "0px 2px 8px rgba(0,123,255,0.1)",
                         transition: "transform 0.3s, box-shadow 0.3s",
                         "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0px 6px 18px rgba(0,123,255,0.2)",
+                          transform: "translateY(-3px)",
+                          boxShadow: "0px 4px 12px rgba(0,123,255,0.2)",
                         },
                         cursor: "pointer",
                       }}
-                      onClick={() => navigate(`/playlist/${playlist._id}`)} // Assuming a playlist route exists
+                      onClick={() => navigate(`/playlist/${playlist._id}/videos`)}
                     >
                       <Typography
                         variant="h6"
@@ -410,6 +464,7 @@ const Profile = () => {
                           fontWeight: "bold",
                           color: "#007BFF",
                           textAlign: "center",
+                          fontSize: "1rem",
                         }}
                       >
                         {playlist.title}
@@ -420,7 +475,8 @@ const Profile = () => {
                           fontFamily: "Velyra",
                           color: "#666",
                           textAlign: "center",
-                          mt: 1,
+                          mt: 0.5,
+                          fontSize: "0.75rem",
                         }}
                       >
                         {playlist.videos.length}{" "}
@@ -430,10 +486,14 @@ const Profile = () => {
                   </Grid>
                 ))
               ) : (
-                <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
+                <Box sx={{ width: "100%", textAlign: "center", py: 2 }}>
                   <Typography
                     variant="body1"
-                    sx={{ fontFamily: "Velyra", color: "#666" }}
+                    sx={{
+                      fontFamily: "Velyra",
+                      color: "#666",
+                      fontSize: "1rem",
+                    }}
                   >
                     No playlists available.
                   </Typography>
@@ -447,10 +507,11 @@ const Profile = () => {
             <Paper
               elevation={2}
               sx={{
-                p: 3,
+                p: 2,
                 backgroundColor: "#ffffff",
-                borderRadius: "12px",
-                boxShadow: "0px 4px 12px rgba(0,123,255,0.1)",
+                borderRadius: "8px",
+                boxShadow: "0px 2px 8px rgba(0,123,255,0.1)",
+                maxWidth: "100%",
               }}
             >
               <Typography
@@ -459,20 +520,30 @@ const Profile = () => {
                   fontFamily: "Velyra",
                   fontWeight: "bold",
                   color: "#007BFF",
-                  mb: 2,
+                  mb: 1,
+                  fontSize: "1rem",
                 }}
               >
                 About
               </Typography>
               <Typography
                 variant="body1"
-                sx={{ fontFamily: "Velyra", color: "#333" }}
+                sx={{
+                  fontFamily: "Velyra",
+                  color: "#333",
+                  fontSize: "0.95rem",
+                }}
               >
                 {user.bio || "No bio available."}
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ mt: 2, fontFamily: "Velyra", color: "#666" }}
+                sx={{
+                  mt: 1,
+                  fontFamily: "Velyra",
+                  color: "#666",
+                  fontSize: "0.75rem",
+                }}
               >
                 Joined: {user.joinedOn ? new Date(user.joinedOn).toLocaleDateString() : "Unknown"}
               </Typography>

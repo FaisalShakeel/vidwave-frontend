@@ -33,8 +33,8 @@ const Layout = ({ children }) => {
           },
           mr: { 
             xs: 0,  // No right margin on smaller screens
-            lg: "20px",  // Add some space on the right side for large devices
-            xl: "30px"   // More space on extra-large devices
+            lg: "3px",  // Add some space on the right side for large devices
+            xl: "3px"   // More space on extra-large devices
           },
           transition: "margin-left 0.3s ease",
           overflowY: "auto",  // Ensure the content can scroll vertically

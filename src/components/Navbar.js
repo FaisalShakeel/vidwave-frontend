@@ -10,6 +10,10 @@ import {
   Typography,
   Box,
   Button,
+  useMediaQuery,
+  useTheme,
+  Divider,
+  Avatar,
 } from "@mui/material";
 import { AccountCircle, VideoLibrary, Logout } from "@mui/icons-material";
 import {
@@ -27,32 +31,48 @@ const Navbar = ({ toggleSidebar }) => {
   const navigate = useNavigate();
   const [decodedUser, setDecodedUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const token = localStorage.getItem("token");
   const { searchQuery, setSearchQuery } = useSearchQuery();
+  const theme = useTheme();
+  const isXsScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isSmScreen = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
+  // Check authentication status on mount and when token changes
   useEffect(() => {
+    const token = localStorage.getItem("token");
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
         const currentTime = Date.now() / 1000;
         if (decodedToken.exp < currentTime) {
           setIsAuthenticated(false);
+          setDecodedUser(null);
           localStorage.removeItem("token");
         } else {
           setDecodedUser(decodedToken);
           setIsAuthenticated(true);
         }
       } catch (e) {
-        console.error("Error while decoding the user");
+        console.error("Error decoding token:", e);
         setIsAuthenticated(false);
+        setDecodedUser(null);
+        localStorage.removeItem("token");
       }
     } else {
       setIsAuthenticated(false);
+      setDecodedUser(null);
     }
-  }, [token]);
+  }, []); // Removed token from dependency array to prevent re-checking on every render
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+    setDecodedUser(null);
+    navigate("/login");
+    handleMenuClose();
+  };
 
   return (
     <AppBar
@@ -61,108 +81,125 @@ const Navbar = ({ toggleSidebar }) => {
         backgroundColor: "#ffffff",
         boxShadow: "0px 4px 20px rgba(0,0,0,0.05)",
         zIndex: 1200,
-        padding: { xs: "0 10px", sm: "0 20px" },
+        padding: { xs: "0 8px", sm: "0 16px" },
         borderRadius: 0,
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between", minHeight: 80 }}>
+      <Toolbar 
+        sx={{ 
+          justifyContent: "space-between", 
+          minHeight: { xs: 60, sm: 70, md: 80 },
+          padding: { xs: '0 4px', sm: '0 8px', md: '0 16px' }
+        }}
+      >
         <IconButton
           edge="start"
           color="primary"
           onClick={toggleSidebar}
-          sx={{ marginRight: 2, display: { md: "none" } }}
-        >
-          <MenuIcon />
-        </IconButton>
-
-        <Typography
-          variant="h5"
-          sx={{
-            color: "#007BFF",
-            fontWeight: "bold",
-            fontFamily: "Velyra, sans-serif",
-            flexGrow: { xs: 1, md: 0 },
+          sx={{ 
+            marginRight: { xs: 0.5, sm: 1 },
+            padding: { xs: 0.5, sm: 0.75 }, 
+            display: { md: "none" } 
           }}
         >
-          Vidwave
-        </Typography>
+          <MenuIcon sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }} />
+        </IconButton>
+
+        {!isXsScreen && (
+          <Typography
+            variant="h5"
+            sx={{
+              color: "#007BFF",
+              fontWeight: "bold",
+              fontFamily: "Velyra, sans-serif",
+              fontSize: { xs: "1rem", sm: "1.1rem", md: "1.25rem" },
+              flexGrow: { xs: 0, md: 0 },
+              display: { xs: "flex", md: "flex" },
+              marginRight: { xs: 1, sm: 2 }
+            }}
+          >
+            Vidwave
+          </Typography>
+        )}
 
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            backgroundColor: "#f1f5fc",
+            backgroundColor: "#f5f8ff",
             borderRadius: 50,
-            width: { xs: "auto", sm: "40%" },
-            padding: { xs: 0, sm: "4px 8px" },
-            boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+            flexGrow: 1,
+            maxWidth: { xs: "70%", sm: "50%", md: "40%" },
+            height: { xs: 32, sm: 36, md: 40 },
+            padding: { xs: "2px 4px", sm: "4px 8px" },
+            border: "1px solid #e0e7ff",
           }}
         >
           <InputBase
             value={searchQuery}
             placeholder="Search…"
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             sx={{
-              display: { xs: "none", sm: "flex" },
+              display: "flex",
               fontFamily: "Velyra, sans-serif",
               color: "#333",
               flexGrow: 1,
               borderRadius: "50px",
-              px: 2,
+              px: { xs: 1, sm: 1.5 },
+              fontSize: { xs: "0.75rem", sm: "0.85rem", md: "0.95rem" },
             }}
           />
           <IconButton
-            onClick={() => {
-              navigate(`/search/?query=${searchQuery}`);
-            }}
+            onClick={() => navigate(`/search/?query=${searchQuery}`)}
             color="primary"
+            size={isXsScreen ? "small" : "medium"}
+            sx={{ padding: { xs: 0.5, sm: 0.75 } }}
           >
-            <Search />
+            <Search sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }} />
           </IconButton>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1, md: 2 } }}>
           {isAuthenticated && (
             <>
               <IconButton
-                onClick={() => {
-                  navigate("/notifications");
-                }}
+                onClick={() => navigate("/notifications")}
                 color="primary"
+                size={isXsScreen ? "small" : "medium"}
+                sx={{ padding: { xs: 0.5, sm: 0.75 } }}
               >
-                <Notifications />
+                <Notifications sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }} />
               </IconButton>
 
               <IconButton
-                onClick={() => {
-                  navigate("/studio/upload-video");
-                }}
+                onClick={() => navigate("/studio/upload-video")}
                 color="primary"
+                size={isXsScreen ? "small" : "medium"}
+                sx={{ padding: { xs: 0.5, sm: 0.75 } }}
               >
-                <Add />
+                <Add sx={{ fontSize: { xs: "1.1rem", sm: "1.25rem" } }} />
               </IconButton>
             </>
           )}
 
           {isAuthenticated ? (
             <>
-              <IconButton onClick={handleMenuOpen}>
-                <img
-                  height={40}
-                  width={40}
-                  src={
-                    decodedUser?.profilePhotoUrl ||
-                    "https://via.placeholder.com/40"
-                  }
+              <IconButton 
+                onClick={handleMenuOpen}
+                sx={{ 
+                  padding: { xs: 0.5, sm: 0.75 },
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <Avatar
+                  src={decodedUser?.profilePhotoUrl || "https://via.placeholder.com/40"}
                   alt="Profile"
-                  style={{
-                    borderRadius: "50%",
-                    objectFit: "cover",
+                  sx={{
+                    width: isXsScreen ? 32 : 40,
+                    height: isXsScreen ? 32 : 40,
                     transition: "transform 0.3s ease",
                     "&:hover": {
-                      transform: "scale(1.1)",
+                      transform: "scale(1.05)",
                     },
                   }}
                 />
@@ -174,148 +211,223 @@ const Navbar = ({ toggleSidebar }) => {
                 onClose={handleMenuClose}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                disableScrollLock
                 sx={{
-                  mt: 1,
+                  mt: 1.5,
                   "& .MuiPaper-root": {
-                    borderRadius: "16px",
-                    boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
-                    background: "linear-gradient(145deg, #f9fafb 0%, #f1f3f9 100%)",
-                    border: "1px solid rgba(0,123,255,0.1)",
-                    minWidth: "260px",
-                    padding: "12px 0",
+                    borderRadius: "20px",
+                    background: "#ffffff",
+                    border: "1px solid #e0e7ff",
+                    minWidth: { xs: "260px", sm: "300px" },
+                    padding: 0,
+                    boxShadow: "0 8px 32px rgba(0, 123, 255, 0.15)",
                     overflow: "visible",
+                    "&:before": {
+                      content: '""',
+                      position: "absolute",
+                      top: -8,
+                      right: 18,
+                      width: 16,
+                      height: 16,
+                      backgroundColor: "#ffffff",
+                      transform: "rotate(45deg)",
+                      borderLeft: "1px solid #e0e7ff",
+                      borderTop: "1px solid #e0e7ff",
+                    },
+                  },
+                  "& .MuiList-root": {
+                    padding: 0,
                   },
                 }}
               >
-                {/* User Info Header */}
+                {/* Enhanced Profile Header */}
                 <Box 
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '16px 20px',
-                    borderBottom: '1px solid rgba(0,0,0,0.05)',
-                    marginBottom: '8px',
+                    background: "linear-gradient(135deg, #007BFF 0%, #007BFF 100%)",
+                    borderTopLeftRadius: "20px",
+                    borderTopRightRadius: "20px",
+                    padding: { xs: '20px 24px', sm: '24px 28px' },
+                    position: "relative",
+                    color: "white",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    textAlign: "center",
+                    overflow: "hidden",
+                    "&:after": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+                      pointerEvents: "none",
+                    },
                   }}
                 >
-                  <img
-                    height={56}
-                    width={56}
-                    src={
-                      decodedUser?.profilePhotoUrl ||
-                      "https://via.placeholder.com/56"
-                    }
+                  <Avatar
+                    src={decodedUser?.profilePhotoUrl || "https://via.placeholder.com/80"}
                     alt="Profile"
-                    style={{
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      marginRight: '16px',
+                    sx={{
+                      width: { xs: 70, sm: 80 },
+                      height: { xs: 70, sm: 80 },
+                      border: "4px solid rgba(255, 255, 255, 0.9)",
+                      marginBottom: 1.5,
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
                     }}
                   />
-                  <Box>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontSize: '18px', 
-                        fontWeight: 600, 
-                        color: '#007BFF',
-                        fontFamily: "Velyra, sans-serif",
-                      }}
-                    >
-                      {decodedUser?.name || 'User'}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#6B7280', 
-                        fontFamily: "Velyra, sans-serif",
-                      }}
-                    >
-                      {decodedUser?.email || 'user@example.com'}
-                    </Typography>
-                  </Box>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                      fontWeight: 700, 
+                      fontFamily: "Velyra, sans-serif",
+                      letterSpacing: "0.5px",
+                      mb: 0.5,
+                      textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {decodedUser?.name || 'User'}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontFamily: "Velyra, sans-serif",
+                      fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                      opacity: 0.9,
+                      maxWidth: "80%",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {decodedUser?.email || 'user@example.com'}
+                  </Typography>
                 </Box>
 
-                <MenuItem
-                  onClick={() => {
-                    navigate(`/profile/${decodedUser?.id}`);
-                    handleMenuClose();
-                  }}
-                  sx={{
-                    fontFamily: "Velyra, sans-serif",
-                    color: "#007BFF",
-                    padding: "12px 20px",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      background: "rgba(0,123,255,0.05)",
-                      color: "#0056b3",
-                    },
-                  }}
-                >
-                  <ListItemIcon
+                {/* Enhanced Menu Items */}
+                <Box sx={{ padding: "16px 0", background: "#ffffff" }}>
+                  <MenuItem
+                    onClick={() => {
+                      navigate(`/profile/${decodedUser?.id}`);
+                      handleMenuClose();
+                    }}
                     sx={{
-                      minWidth: "40px",
+                      fontFamily: "Velyra, sans-serif",
                       color: "#007BFF",
+                      padding: { xs: '12px 24px', sm: '14px 28px' },
+                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      "&:hover": {
+                        background: "#F0F7FF",
+                      
+                      },
+                      transition: "all 0.3s ease",
                     }}
                   >
-                    <AccountCircle />
-                  </ListItemIcon>
-                  My Profile
-                </MenuItem>
+                    <ListItemIcon
+                      sx={{
+                        minWidth: { xs: "36px", sm: "40px" },
+                        color: "inherit",
+                      }}
+                    >
+                      <AccountCircle sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                    </ListItemIcon>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
+                        My Profile
+                      </Typography>
+                      <Typography 
+                        sx={{
+                          fontFamily: "Velyra",
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          color: "#668CFF",
+                        }}
+                      >
+                        View and edit your profile
+                      </Typography>
+                    </Box>
+                  </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    navigate("/studio/dashboard");
-                    handleMenuClose();
-                  }}
-                  sx={{
-                    fontFamily: "Velyra, sans-serif",
-                    color: "#007BFF",
-                    padding: "12px 20px",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      background: "rgba(0,123,255,0.05)",
-                      color: "#0056b3",
-                    },
-                  }}
-                >
-                  <ListItemIcon
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/studio/dashboard");
+                      handleMenuClose();
+                    }}
                     sx={{
-                      minWidth: "40px",
+                      fontFamily: "Velyra, sans-serif",
                       color: "#007BFF",
+                      padding: { xs: '12px 24px', sm: '14px 28px' },
+                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      "&:hover": {
+                        background: "#F0F7FF",
+                        
+                      },
+                      transition: "all 0.3s ease",
                     }}
                   >
-                    <VideoLibrary />
-                  </ListItemIcon>
-                  Go to Studio
-                </MenuItem>
+                    <ListItemIcon
+                      sx={{
+                        minWidth: { xs: "36px", sm: "40px" },
+                        color: "inherit",
+                      }}
+                    >
+                      <VideoLibrary sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                    </ListItemIcon>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
+                        Creator Studio
+                      </Typography>
+                      <Typography 
+                        sx={{
+                          fontFamily: "Velyra",
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          color: "#668CFF",
+                        }}
+                      >
+                        Manage your content
+                      </Typography>
+                    </Box>
+                  </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    localStorage.removeItem("token");
-                    navigate("/login");
-                    handleMenuClose();
-                  }}
-                  sx={{
-                    fontFamily: "Velyra, sans-serif",
-                    color: "#FF3D00",
-                    padding: "12px 20px",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      background: "rgba(255,61,0,0.05)",
-                      color: "#d32f2f",
-                    },
-                  }}
-                >
-                  <ListItemIcon
+                  <Divider sx={{ margin: "8px 16px", borderColor: "#E0E7FF" }} />
+
+                  <MenuItem
+                    onClick={handleLogout}
                     sx={{
-                      minWidth: "40px",
-                      color: "#FF3D00",
+                      fontFamily: "Velyra, sans-serif",
+                      color: "#FF3333",
+                      padding: { xs: '12px 24px', sm: '14px 28px' },
+                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      "&:hover": {
+                        background: "#FFF0F0",
+                        color: "#CC0000",
+                      },
+                      transition: "all 0.3s ease",
                     }}
                   >
-                    <Logout />
-                  </ListItemIcon>
-                  Sign Out
-                </MenuItem>
+                    <ListItemIcon
+                      sx={{
+                        minWidth: { xs: "36px", sm: "40px" },
+                        color: "inherit",
+                      }}
+                    >
+                      <Logout sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                    </ListItemIcon>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
+                        Sign Out
+                      </Typography>
+                      <Typography 
+                        sx={{
+                          fontFamily: "Velyra",
+                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          color: "#FF6666",
+                        }}
+                      >
+                        Logout from your account
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                </Box>
               </Menu>
             </>
           ) : (
@@ -327,7 +439,8 @@ const Navbar = ({ toggleSidebar }) => {
                 borderRadius: "20px",
                 textTransform: "none",
                 fontFamily: "Velyra, sans-serif",
-                padding: "6px 20px",
+                padding: { xs: '4px 12px', sm: '6px 20px' },
+                fontSize: { xs: '0.8rem', sm: '0.9rem', md: '0.95rem' },
                 "&:hover": {
                   backgroundColor: "#0066CC",
                 },

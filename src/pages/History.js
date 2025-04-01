@@ -155,7 +155,7 @@ const History = () => {
 
   return (
     <Layout>
-      <Box sx={{ backgroundColor: "#f8f9ff", minHeight: "100vh" }}>
+      <Box sx={{ backgroundColor: "#fff", minHeight: "100vh" }}>
         <ToastContainer />
         {/* Top Centered Delete History Button */}
         {!loading && isAuthenticated && !error && (
@@ -190,7 +190,7 @@ const History = () => {
         {/* Loading State */}
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-            <CircularProgress size={40} thickness={7} sx={{ color: "#007BFF" }} />
+            <CircularProgress size={30} thickness={6} sx={{ color: "#007BFF" }} />
           </Box>
         )}
 
@@ -227,55 +227,55 @@ const History = () => {
 
         {/* Video Grid Section */}
         {!loading && isAuthenticated && !error && (
-          <Grid container spacing={3} sx={{ padding: 3 }}>
+          <Grid container spacing={2} sx={{ padding: 2 }}>
             {watchedVideos.length > 0 ? (
               watchedVideos.map((video, index) => (
                 <Grid
                   onClick={() => navigate(`/watch/${video._id}`)}
                   item
                   xs={12}
-                  sm={12}
+                  sm={6}
                   md={6}
-                  lg={6}
+                  lg={4}
                   xl={4}
                   key={video._id || index}
                 >
                   <Card
                     sx={{
-                      boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-                      borderRadius: "12px",
+                      boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
+                      borderRadius: "8px",
                       display: "flex",
                       flexDirection: "column",
                       height: "100%",
                       overflow: "hidden",
-                      transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                      "&:hover": {
-                        transform: "scale(1.05)",
-                        boxShadow: "0px 8px 20px rgba(0,0,0,0.15)",
+                      ":hover": {
+                        transform: "scale(1.03)",
+                        transition: "0.3s ease",
+                        boxShadow: "0px 6px 12px rgba(0,0,0,0.12)",
                       },
-                      backgroundColor: "#ffffff",
                     }}
                   >
                     {/* Video Thumbnail */}
                     <img
-                      src={video.thumbnailUrl || "https://via.placeholder.com/250x140"}
+                      src={video.thumbnailUrl || "https://via.placeholder.com/200x120"}
                       alt={video.title}
                       style={{
                         width: "100%",
-                        height: "200px",
+                        height: "120px",
                         objectFit: "cover",
-                        borderRadius: "12px 12px 0 0",
+                        borderRadius: "8px 8px 0 0",
                       }}
                     />
 
                     {/* Video Details */}
-                    <CardContent sx={{ padding: 2, flexGrow: 1 }}>
+                    <CardContent sx={{ padding: 1, flexGrow: 1 }}>
                       <Typography
-                        variant="h6"
+                        variant="subtitle2"
                         sx={{
                           fontFamily: "Velyra",
-                          color: "#007BFF",
+                          color: "#333",
                           fontWeight: "bold",
+                          fontSize: "0.95rem",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -285,12 +285,19 @@ const History = () => {
                       </Typography>
 
                       {/* Uploader */}
-                      <Box sx={{ marginTop: 2, display: "flex", alignItems: "center" }}>
+                      <Box sx={{ marginTop: 1, display: "flex", alignItems: "center" }}>
                         <Avatar
-                          src={video.uploadedByProfilePhotoUrl || "https://via.placeholder.com/50"}
-                          sx={{ width: 50, height: 50, marginRight: 2, boxShadow: "0px 2px 4px rgba(0,0,0,0.1)" }}
+                          src={video.uploadedByProfilePhotoUrl || "https://via.placeholder.com/30"}
+                          sx={{ width: 30, height: 30, marginRight: 1 }}
                         />
-                        <Typography variant="body2" sx={{ fontFamily: "Velyra", color: "#666" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "Velyra",
+                            color: "#555",
+                            fontSize: "0.8rem",
+                          }}
+                        >
                           {video.uploadedByName || "Unknown Uploader"}
                         </Typography>
                       </Box>
@@ -300,18 +307,26 @@ const History = () => {
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
-                          marginTop: 1,
+                          marginTop: 0.5,
                         }}
                       >
                         <Typography
                           variant="body2"
-                          sx={{ fontFamily: "Velyra", color: "#666", fontSize: "0.875rem" }}
+                          sx={{
+                            fontFamily: "Velyra",
+                            color: "#555",
+                            fontSize: "0.75rem",
+                          }}
                         >
                           {video.viewedBy?.length || 0} views
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ fontFamily: "Velyra", color: "#666", fontSize: "0.875rem" }}
+                          sx={{
+                            fontFamily: "Velyra",
+                            color: "#555",
+                            fontSize: "0.75rem",
+                          }}
                         >
                           {video.likedBy?.length || 0} likes
                         </Typography>
@@ -323,9 +338,9 @@ const History = () => {
                         sx={{
                           fontFamily: "Velyra",
                           textAlign: "center",
-                          color: "#666",
-                          fontSize: "0.875rem",
-                          marginTop: 1,
+                          color: "#555",
+                          fontSize: "0.75rem",
+                          marginTop: 0.5,
                         }}
                       >
                         {moment(new Date(video.createdAt).toLocaleString()).fromNow()}
@@ -337,11 +352,12 @@ const History = () => {
             ) : (
               <Box sx={{ width: "100%", textAlign: "center", py: 4 }}>
                 <Typography
-                  variant="h6"
+                  variant="subtitle1"
                   sx={{
                     fontFamily: "Velyra",
-                    color: "#666",
+                    color: "#555",
                     textAlign: "center",
+                    fontSize: "1rem",
                   }}
                 >
                   You haven’t watched any videos yet!
