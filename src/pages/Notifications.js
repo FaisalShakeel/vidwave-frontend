@@ -61,17 +61,16 @@ const Notifications = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/notifications/all-notifications", {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/notifications/all-notifications`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
         setNotifications(response.data.notifications);
       } else {
-        throw new Error("Notifications could not be fetched!");
+        setError("Failed to fetch notifications.Please try again!");
       }
     } catch (e) {
       setError(e.response ? e.response.data.message : e.message || "An error occurred while fetching notifications.");
-      toast.error(e.response ? e.response.data.message : e.message, { style: { fontFamily: "Velyra" } });
     } finally {
       setLoading(false);
     }

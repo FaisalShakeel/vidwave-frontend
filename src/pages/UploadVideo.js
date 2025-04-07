@@ -134,7 +134,7 @@ const UploadVideo = () => {
     setUploading(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/videos/upload-video",
+        `${process.env.REACT_APP_API_BASE_URL}/videos/upload-video`,
         {
           title: videoTitle,
           description: videoDescription,

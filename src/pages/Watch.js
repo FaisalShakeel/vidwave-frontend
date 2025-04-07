@@ -173,7 +173,7 @@ const Watch = () => {
     setIsCommenting(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/videos/replytocomment",
+        `${process.env.REACT_APP_API_BASE_URL}/videos/reply-to-comment`,
         { videoId: id, commentId, replyText: newComment },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -204,7 +204,7 @@ const Watch = () => {
     setIsCommenting(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/videos/addcomment",
+        `${[process.env.REACT_APP_API_BASE_URL]}/videos/add-comment`,
         { videoId: id, comment: newComment },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -235,7 +235,7 @@ const Watch = () => {
     setIsLiking(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/videos/likevideo",
+        `${process.env.REACT_APP_API_BASE_URL}/videos/like-video`,
         { videoId: id },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -266,7 +266,7 @@ const Watch = () => {
     if (!isAuthenticated) return;
     setPlaylistsLoading(true);
     try {
-      const response = await axios.get("http://localhost:5000/playlists/getmyplaylists", {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/playlists/my-playlists`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
@@ -294,7 +294,7 @@ const Watch = () => {
     setIsCreatingPlaylist(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/playlists/create",
+        `${process.env.REACT_APP_API_BASE_URL}/playlists/create`,
         { title: newPlaylistName, description: newPlaylistDescription },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -327,7 +327,7 @@ const Watch = () => {
     setIsUnsaving(true);
     try {
       const response = await axios.post(
-        `http://localhost:5000/playlists/addtoplaylist`,
+        `${process.env.REACT_APP_API_BASE_URL}/playlists/add-to-playlist`,
         { video, playlistId },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -358,7 +358,7 @@ const Watch = () => {
     setIsSubscribing(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/users/follow",
+        `${process.env.REACT_APP_API_BASE_URL}/users/follow`,
         { followingId: uploadedBy._id },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -392,7 +392,7 @@ const Watch = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5000/videos/getvideo/${id}${token ? `?token=${token}` : ""}`
+        `${process.env.REACT_APP_API_BASE_URL}/videos/video-details/${id}${token ? `?token=${token}` : ""}`
       );
       if (response.data.success) {
         setVideo(response.data.video);

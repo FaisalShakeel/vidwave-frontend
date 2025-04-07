@@ -67,7 +67,7 @@ function App() {
     <BrowserRouter>
       <SearchQueryProvider>
         <Routes>
-          <Route path="/createaccount" element={<SignUp/>} />
+          <Route path="/create-account" element={<SignUp/>} />
           <Route path='/login' element={<Login/>} />
           <Route path='/' element={<HomePage/>} />
           <Route path='*' element={<NotFound/>} />

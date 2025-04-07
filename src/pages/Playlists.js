@@ -24,7 +24,7 @@ import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import Layout from "../components/Layout";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import ErrorDisplay from "../components/ErrorDisplay";
 
@@ -72,13 +72,13 @@ const Playlists = () => {
     setPlaylistsLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/playlists/getmyplaylists", {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/playlists/my-playlists`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
         setUserPlaylists(response.data.playlists);
       } else {
-        throw new Error("Failed to fetch your playlists. Please try again later.");
+        setError("Failed to fetch your playlists. Please try again later.");
       }
     } catch (error) {
       setError(error.response?.data?.message || error.message || "An error occurred while fetching playlists.");
@@ -91,7 +91,7 @@ const Playlists = () => {
     setIsUpdatingPlaylist(true);
     try {
       const response = await axios.put(
-        `http://localhost:5000/playlists/update-playlist/${playlistId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/playlists/update-playlist/${playlistId}`,
         {
           title: playlistTitle,
           description: playlistDescription,
@@ -127,7 +127,7 @@ const Playlists = () => {
   const handleDelete = async (playlistId) => {
     setIsDeleting(true);
     try {
-      const response = await axios.delete(`http://localhost:5000/playlists/delete-playlist/${playlistId}`, {
+      const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/playlists/delete-playlist/${playlistId}`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
@@ -147,138 +147,203 @@ const Playlists = () => {
     fetchUserPlaylists();
   }, []);
 
+  
+  
   const renderLoginPrompt = () => (
     <Box
       sx={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: "80vh",
-        background: "linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%)",
-        padding: 2,
+        minHeight: "100vh", // Adjusted to match the previous full-height design
+        width: "100%",
+        background: "linear-gradient(135deg, #f5f7ff 0%, #e9f0ff 100%)", // Updated to match previous gradient
+        padding: 0, // Removed padding to fill the screen
+        margin: 0,
+        mt:{md:-11},
+        overflow: "hidden",
       }}
     >
       <Box
         sx={{
-          padding: 4,
-          borderRadius: "24px",
-          textAlign: "center",
-          maxWidth: "500px",
+          display: "flex",
           width: "100%",
-          background: "rgba(255, 255, 255, 0.9)",
-          boxShadow: "0 8px 32px rgba(0, 123, 255, 0.2)",
-          backdropFilter: "blur(8px)",
-          border: "1px solid rgba(255, 255, 255, 0.18)",
+          maxWidth: "900px", // Matching the reduced width from the previous code
+          height: "80vh",
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow: "0px 8px 40px rgba(0, 0, 0, 0.12)",
         }}
       >
+        {/* Left side - Branding Area */}
         <Box
           sx={{
-            display: "inline-flex",
-            p: 2,
-            mb: 2,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #007BFF 0%, #0056b3 100%)",
-            boxShadow: "0 4px 12px rgba(0, 123, 255, 0.3)",
+            flex: 1,
+            background: "linear-gradient(135deg, #0062E6 0%, #33A8FF 100%)",
+            display: { xs: "none", md: "flex" }, // Hidden on mobile
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 6,
+            color: "#fff",
           }}
         >
-          <LockIcon sx={{ fontSize: 40, color: "#ffffff" }} />
+          <Typography
+            variant="h4"
+            sx={{
+              fontFamily: "Velyra",
+              fontWeight: "700",
+              mb: 2,
+              textShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            Your Playlists
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontFamily: "Velyra",
+              textAlign: "center",
+              opacity: 0.9,
+              fontSize: "1rem",
+            }}
+          >
+            Sign in to access and manage your playlists effortlessly.
+          </Typography>
         </Box>
-        <Typography
-          variant="h5"
+  
+        {/* Right side - Login Container */}
+        <Box
           sx={{
-            fontFamily: "Velyra",
-            fontWeight: "bold",
-            color: "#007BFF",
-            mb: 2,
-            textShadow: "0 2px 4px rgba(0, 123, 255, 0.1)",
+            flex: { xs: 1, md: 0.6 },
+            backgroundColor: "#ffffff",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: { xs: 3, sm: 6 },
           }}
         >
-          Please Log In
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            fontFamily: "Velyra",
-            color: "#555",
-            mb: 3,
-            fontSize: "1.1rem",
-          }}
-        >
-          You need to be logged in to view your playlists. Sign in to manage your collections!
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/login")}
-          sx={{
-            fontFamily: "Velyra",
-            fontWeight: "bold",
-            background: "linear-gradient(135deg, #007BFF 0%, #0056b3 100%)",
-            borderRadius: "12px",
-            padding: "12px 28px",
-            fontSize: "1rem",
-            boxShadow: "0 4px 12px rgba(0, 123, 255, 0.3)",
-            "&:hover": {
-              boxShadow: "0 6px 16px rgba(0, 123, 255, 0.4)",
-              transform: "translateY(-2px)",
-            },
-            transition: "all 0.3s ease",
-          }}
-        >
-          Log In
-        </Button>
+          <Box sx={{ maxWidth: "400px", width: "100%" }}>
+            <Box sx={{ textAlign: "center", mb: 5 }}>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  p: 2,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(0, 123, 255, 0.08)",
+                  mb: 2,
+                }}
+              >
+                <LockIcon sx={{ fontSize: 28, color: "#007BFF" }} />
+              </Box>
+              
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: "Velyra",
+                  fontWeight: "700",
+                  color: "#1a1a1a",
+                  mb: 1,
+                }}
+              >
+                Please Log In
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontFamily: "Velyra",
+                  color: "#777",
+                  mb: 4,
+                  fontSize: "1rem",
+                }}
+              >
+                Sign in to access and manage your playlists effortlessly!
+              </Typography>
+            </Box>
+  
+            <Button
+              variant="contained"
+              fullWidth
+              size="large"
+              onClick={() => navigate("/login")}
+              sx={{
+                fontFamily: "Velyra",
+                fontWeight: "600",
+                backgroundColor: "#007BFF",
+                borderRadius: "12px",
+                padding: "14px",
+                textTransform: "none",
+                fontSize: "1rem",
+                boxShadow: "0 4px 14px rgba(0, 123, 255, 0.3)",
+                "&:hover": {
+                  backgroundColor: "#0056b3",
+                  boxShadow: "0 6px 18px rgba(0, 123, 255, 0.4)",
+                },
+              }}
+            >
+              Log In
+            </Button>
+  
+            <Box sx={{ textAlign: "center", mt: 4 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: "Velyra",
+                  color: "#777",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Don't have an account?{" "}
+                <Typography
+                
+                  style={{
+                    fontFamily: "Velyra",
+                    color: "#007BFF",
+                    fontWeight: "700", // Bold
+                    textDecoration: "none",
+                    display:"inline-block",
+                    cursor:"pointer",
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                  onClick={()=>{navigate("/create-account")}}
+                >
+                  Sign up
+                </Typography>
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
-
   return (
     <Layout>
       <ToastContainer />
       <Box
         sx={{
-          padding: { xs: "16px", sm: "24px", md: "32px" },
+          padding: { xs: "12px", sm: "20px", md: "32px" },
           minHeight: "100vh",
+          background: "linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          background: "linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%)",
         }}
       >
-        <Box
+        {/* Simplified "My Playlists" Title */}
+       {isAuthenticated &&<Typography
+          variant="h4"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
+            fontFamily: "Velyra",
+            fontWeight: 900,
+            color: "#007BFF",
             mb: 4,
-            p: 2,
-            borderRadius: "16px",
-            background: "rgba(255, 255, 255, 0.8)",
-            boxShadow: "0 4px 20px rgba(0, 123, 255, 0.1)",
-            width: "100%",
-            maxWidth: "800px",
+            textAlign: "center",
           }}
         >
-          <PlaylistPlayIcon
-            sx={{
-              fontSize: 40,
-              color: "#007BFF",
-              background: "rgba(0, 123, 255, 0.1)",
-              p: 1,
-              borderRadius: "12px",
-            }}
-          />
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: "Velyra",
-              fontWeight: "bold",
-              color: "#007BFF",
-              textAlign: "center",
-              textShadow: "0 2px 4px rgba(0, 123, 255, 0.1)",
-            }}
-          >
-            My Playlists
-          </Typography>
-        </Box>
+          My Playlists ({userPlaylists.length})
+        </Typography>
+}
 
         {playlistsLoading && (
           <Box
@@ -290,11 +355,12 @@ const Playlists = () => {
             }}
           >
             <CircularProgress
-              size={60}
+              size={50}
               thickness={5}
               sx={{
                 color: "#007BFF",
-                animationDuration: "800ms",
+                animationDuration: "700ms",
+                boxShadow: "0 0 15px rgba(0, 123, 255, 0.3)",
               }}
             />
           </Box>
@@ -310,13 +376,17 @@ const Playlists = () => {
           userPlaylists.length === 0 ? (
             <Box
               sx={{
-                p: 4,
+                p: 3,
                 borderRadius: "16px",
-                background: "rgba(255, 255, 255, 0.8)",
-                boxShadow: "0 4px 20px rgba(0, 123, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.97)",
+                boxShadow: "0 8px 24px rgba(0, 123, 255, 0.15)",
                 textAlign: "center",
                 maxWidth: "600px",
                 width: "100%",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 10px 30px rgba(0, 123, 255, 0.2)",
+                },
               }}
             >
               <Typography
@@ -326,9 +396,10 @@ const Playlists = () => {
                   color: "#666",
                   fontWeight: "medium",
                   mb: 2,
+                  fontSize: "1.1rem",
                 }}
               >
-                You haven't created any playlists yet!
+                No Playlists Yet!
               </Typography>
               <Button
                 variant="contained"
@@ -337,8 +408,8 @@ const Playlists = () => {
                   fontFamily: "Velyra",
                   background: "linear-gradient(135deg, #007BFF 0%, #0056b3 100%)",
                   borderRadius: "12px",
-                  padding: "12px 24px",
-                  fontSize: "1rem",
+                  padding: "8px 24px",
+                  fontSize: "0.9rem",
                   boxShadow: "0 4px 12px rgba(0, 123, 255, 0.3)",
                   "&:hover": {
                     boxShadow: "0 6px 16px rgba(0, 123, 255, 0.4)",
@@ -351,9 +422,9 @@ const Playlists = () => {
               </Button>
             </Box>
           ) : (
-            <Grid container spacing={3} sx={{ width: "100%", maxWidth: "1200px" }}>
+            <Grid container spacing={2} sx={{ width: "100%", maxWidth: "1200px" }}>
               {userPlaylists.map((playlist, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid item xs={12} key={index}>
                   <Card
                     onClick={() => {
                       navigate(`/playlist/${playlist._id}/videos`);
@@ -361,15 +432,15 @@ const Playlists = () => {
                     }}
                     sx={{
                       borderRadius: "16px",
-                      boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
-                      background: "rgba(255, 255, 255, 0.9)",
-                      height: "100%",
+                      boxShadow: "0 6px 20px rgba(0, 123, 255, 0.15)",
+                      background: "rgba(255, 255, 255, 0.98)",
                       display: "flex",
-                      flexDirection: "column",
+                      alignItems: "center",
+                      p: 1.5,
                       transition: "all 0.3s ease",
                       "&:hover": {
-                        transform: "translateY(-8px)",
-                        boxShadow: "0 12px 24px rgba(0, 123, 255, 0.2)",
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 10px 30px rgba(0, 123, 255, 0.25)",
                       },
                     }}
                   >
@@ -377,110 +448,64 @@ const Playlists = () => {
                       sx={{
                         flexGrow: 1,
                         display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        p: 1.5,
                       }}
                     >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          gap: 1,
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <PlaylistPlayIcon
                           sx={{
-                            fontFamily: "Velyra",
-                            fontWeight: "bold",
+                            fontSize: 36,
                             color: "#007BFF",
-                            flexGrow: 1,
-                            wordBreak: "break-word",
+                            background: "rgba(0, 123, 255, 0.1)",
+                            p: 1,
+                            borderRadius: "10px",
+                            boxShadow: "0 2px 8px rgba(0, 123, 255, 0.2)",
                           }}
-                        >
-                          {playlist.title}
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1,
-                          }}
-                        >
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPlaylistTitle(playlist.title);
-                              setPlaylistDescription(playlist.description);
-                              setPlaylistId(playlist._id);
-                              setPlaylistDialogOpen(true);
-                            }}
+                        />
+                        <Box>
+                          <Typography
+                            variant="h6"
                             sx={{
-                              backgroundColor: "rgba(0, 123, 255, 0.1)",
-                              borderRadius: "8px",
-                              "&:hover": {
-                                backgroundColor: "rgba(0, 123, 255, 0.2)",
-                              },
+                              fontFamily: "Velyra",
+                              fontWeight: "bold",
+                              color: "#007BFF",
+                              fontSize: "1.1rem",
                             }}
                           >
-                            <EditIcon fontSize="small" sx={{ color: "#007BFF" }} />
-                          </IconButton>
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPlaylistId(playlist._id);
-                              handleDelete(playlist._id);
-                            }}
-                            disabled={isDeleting && playlistId === playlist._id}
+                            {playlist.title}
+                          </Typography>
+                          <Typography
+                            variant="body2"
                             sx={{
-                              backgroundColor: "rgba(255, 0, 0, 0.1)",
-                              borderRadius: "8px",
-                              "&:hover": {
-                                backgroundColor: "rgba(255, 0, 0, 0.2)",
-                              },
+                              fontFamily: "Velyra",
+                              color: "#666",
+                              mt: 0.5,
+                              fontSize: "0.85rem",
                             }}
                           >
-                            <DeleteIcon
-                              fontSize="small"
-                              sx={{
-                                color: isDeleting && playlistId === playlist._id ? "#aaa" : "#f44336",
-                              }}
-                            />
-                          </IconButton>
+                            {playlist.description || "No description available"}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontFamily: "Velyra",
+                              color: "#888",
+                              mt: 0.5,
+                              fontSize: "0.8rem",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <PlaylistPlayIcon fontSize="small" />
+                            {playlist.videos.length} videos
+                          </Typography>
                         </Box>
                       </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: "Velyra",
-                          color: "#666",
-                          flexGrow: 1,
-                        }}
-                      >
-                        {playlist.description || "No description available"}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          mt: 2,
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontFamily: "Velyra",
-                            color: "#666",
-                            fontWeight: "medium",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <PlaylistPlayIcon fontSize="small" />
-                          {playlist.videos.length} videos
-                        </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Button
                           variant="outlined"
                           size="small"
@@ -490,17 +515,63 @@ const Playlists = () => {
                           }}
                           sx={{
                             fontFamily: "Velyra",
-                            borderRadius: "12px",
+                            borderRadius: "10px",
                             borderColor: "#007BFF",
                             color: "#007BFF",
+                            px: 2,
+                            py: 0.5,
+                            fontSize: "0.85rem",
                             "&:hover": {
                               backgroundColor: "rgba(0, 123, 255, 0.1)",
                               borderColor: "#0056b3",
                             },
+                            transition: "all 0.3s ease",
                           }}
                         >
-                          View
+                          View Playlist
                         </Button>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistTitle(playlist.title);
+                            setPlaylistDescription(playlist.description);
+                            setPlaylistId(playlist._id);
+                            setPlaylistDialogOpen(true);
+                          }}
+                          sx={{
+                            backgroundColor: "rgba(0, 123, 255, 0.1)",
+                            borderRadius: "10px",
+                            p: 1,
+                            "&:hover": {
+                              backgroundColor: "rgba(0, 123, 255, 0.2)",
+                            },
+                          }}
+                        >
+                          <EditIcon sx={{ color: "#007BFF", fontSize: 20 }} />
+                        </IconButton>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistId(playlist._id);
+                            handleDelete(playlist._id);
+                          }}
+                          disabled={isDeleting && playlistId === playlist._id}
+                          sx={{
+                            backgroundColor: "rgba(255, 0, 0, 0.1)",
+                            borderRadius: "10px",
+                            p: 1,
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 0, 0, 0.2)",
+                            },
+                          }}
+                        >
+                          <DeleteIcon
+                            sx={{
+                              color: isDeleting && playlistId === playlist._id ? "#aaa" : "#f44336",
+                              fontSize: 20,
+                            }}
+                          />
+                        </IconButton>
                       </Box>
                     </CardContent>
                   </Card>
@@ -519,9 +590,9 @@ const Playlists = () => {
           PaperProps={{
             sx: {
               borderRadius: "16px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 8px 32px rgba(0, 123, 255, 0.2)",
+              background: "rgba(255, 255, 255, 0.98)",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 10px 30px rgba(0, 123, 255, 0.2)",
             },
           }}
         >
@@ -531,10 +602,8 @@ const Playlists = () => {
               textAlign: "center",
               fontWeight: "bold",
               color: "#007BFF",
-              background: "linear-gradient(135deg, rgba(0, 123, 255, 0.1) 0%, rgba(0, 123, 255, 0.05) 100%)",
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
-              py: 3,
+              py: 2.5,
+              fontSize: "1.2rem",
             }}
           >
             Edit Playlist
@@ -545,7 +614,7 @@ const Playlists = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 3,
+                gap: 2.5,
                 mt: 2,
                 py: 2,
               }}
@@ -555,7 +624,7 @@ const Playlists = () => {
                   shrink
                   sx={{
                     fontFamily: "Velyra",
-                    fontSize: "18px",
+                    fontSize: "1rem",
                     fontWeight: "bold",
                     color: "#007BFF",
                   }}
@@ -564,15 +633,15 @@ const Playlists = () => {
                 </InputLabel>
                 <Input
                   value={playlistTitle}
-                  inputProps={{ style: { fontFamily: "Velyra" } }}
+                  inputProps={{ style: { fontFamily: "Velyra", fontSize: "0.9rem" } }}
                   onChange={(e) => setPlaylistTitle(e.target.value)}
                   fullWidth
                   sx={{
-                    "&:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.2)" },
-                    "&:hover:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.4)" },
+                    "&:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.3)" },
+                    "&:hover:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.5)" },
                     "&:after": { borderBottom: "2px solid #007BFF" },
-                    borderRadius: "8px",
-                    px: 1,
+                    borderRadius: "10px",
+                    px: 1.5,
                     py: 0.5,
                     backgroundColor: "rgba(0, 123, 255, 0.05)",
                   }}
@@ -583,7 +652,7 @@ const Playlists = () => {
                   shrink
                   sx={{
                     fontFamily: "Velyra",
-                    fontSize: "18px",
+                    fontSize: "1rem",
                     fontWeight: "bold",
                     color: "#007BFF",
                   }}
@@ -594,15 +663,16 @@ const Playlists = () => {
                   value={playlistDescription}
                   onChange={(e) => setPlaylistDescription(e.target.value)}
                   multiline
-                  rows={4}
+                  rows={3}
                   fullWidth
                   sx={{
-                    "&:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.2)" },
-                    "&:hover:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.4)" },
+                    "&:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.3)" },
+                    "&:hover:before": { borderBottom: "2px solid rgba(0, 123, 255, 0.5)" },
                     "&:after": { borderBottom: "2px solid #007BFF" },
                     fontFamily: "Velyra",
-                    borderRadius: "8px",
-                    px: 1,
+                    fontSize: "0.9rem",
+                    borderRadius: "10px",
+                    px: 1.5,
                     py: 0.5,
                     backgroundColor: "rgba(0, 123, 255, 0.05)",
                   }}
@@ -622,12 +692,14 @@ const Playlists = () => {
               sx={{
                 fontFamily: "Velyra",
                 color: "#666",
-                borderRadius: "12px",
+                borderRadius: "10px",
                 px: 3,
-                py: 1,
+                py: 0.75,
+                fontSize: "0.85rem",
                 "&:hover": {
                   backgroundColor: "rgba(0, 0, 0, 0.05)",
                 },
+                transition: "all 0.3s ease",
               }}
             >
               Cancel
@@ -639,22 +711,26 @@ const Playlists = () => {
               sx={{
                 fontFamily: "Velyra",
                 background: "linear-gradient(135deg, #007BFF 0%, #0056b3 100%)",
-                borderRadius: "12px",
+                borderRadius: "10px",
                 px: 3,
-                py: 1,
-                boxShadow: "0 4px 8px rgba(0, 123, 255, 0.3)",
+                py: 0.75,
+                fontSize: "0.85rem",
+                boxShadow: "0 4px 12px rgba(0, 123, 255, 0.3)",
                 "&:hover": {
-                  boxShadow: "0 6px 12px rgba(0, 123, 255, 0.4)",
+                  boxShadow: "0 6px 16px rgba(0, 123, 255, 0.4)",
+                  transform: "translateY(-2px)",
                 },
                 "&:disabled": {
                   background: "#e0e0e0",
                   color: "#aaa",
+                  boxShadow: "none",
                 },
+                transition: "all 0.3s ease",
               }}
             >
               {isUpdatingPlaylist ? (
                 <>
-                  <CircularProgress size={20} sx={{ color: "inherit", mr: 1 }} />
+                  <CircularProgress size={18} sx={{ color: "inherit", mr: 1 }} />
                   Updating...
                 </>
               ) : (

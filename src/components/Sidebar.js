@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Box,
   List,
@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router";
 
-const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption }) => {
+const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,85 +35,79 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
     { text: "History", icon: <History />, path: "/history" },
   ];
 
-  useEffect(() => {
+  // Function to determine the currently selected item based on the path
+  const getSelectedItemText = () => {
     const currentPath = location.pathname;
-    
     const matchedItem = menuItems.find(item => {
       if (item.path === "/") {
         return currentPath === "/";
       }
-      return currentPath.startsWith(item.path);
+      return currentPath.startsWith(item.path) && currentPath !== "/";
     });
-
-    if (matchedItem) {
-      // Ensure Home is only selected when exactly on root path
-      if (matchedItem.path === "/" && currentPath !== "/") {
-        return;
-      }
-      setSelectedOption(matchedItem.text);
-    }
-  }, [location.pathname, menuItems, setSelectedOption]);
+    return matchedItem ? matchedItem.text : null;
+  };
 
   const handleItemClick = (item) => {
-    setSelectedOption(item.text);
     navigate(item.path);
   };
 
   const sidebarContent = (collapsed) => (
     <List sx={{ paddingLeft: 0 }}>
-      {menuItems.map((item, index) => (
-        <Tooltip
-          title={collapsed ? item.text : ""}
-          placement="right"
-          key={index}
-        >
-          <ListItem
-            button
-            onClick={() => handleItemClick(item)}
-            sx={{
-              marginBottom: 2,
-              borderRadius: "50px",
-              backgroundColor: selectedOption === item.text ? "#007BFF" : "transparent",
-              color: selectedOption === item.text ? "#FFFFFF" : "#007BFF",
-              "&:hover": {
-                backgroundColor: "#CCE7FF",
-                color: "#007BFF",
-              },
-              padding: collapsed ? "8px" : "12px 16px",
-              justifyContent: collapsed ? "center" : "flex-start",
-              transition: "padding 0.3s ease",
-              alignItems: "center",
-              marginLeft: 0,
-            }}
+      {menuItems.map((item, index) => {
+        const isSelected = getSelectedItemText() === item.text;
+        return (
+          <Tooltip
+            title={collapsed ? item.text : ""}
+            placement="right"
+            key={index}
           >
-            <ListItemIcon
+            <ListItem
+              button
+              onClick={() => handleItemClick(item)}
               sx={{
-                color: selectedOption === item.text ? "#FFFFFF" : "#007BFF",
-                justifyContent: "center",
-                minWidth: collapsed ? "40px" : "45px",
+                marginBottom: 2,
+                borderRadius: "50px",
+                backgroundColor: isSelected ? "#007BFF" : "transparent",
+                color: isSelected ? "#FFFFFF" : "#007BFF",
+                "&:hover": {
+                  backgroundColor: "#CCE7FF",
+                  color: "#007BFF",
+                },
+                padding: collapsed ? "8px" : "12px 16px",
+                justifyContent: collapsed ? "center" : "flex-start",
+                transition: "padding 0.3s ease",
+                alignItems: "center",
+                marginLeft: 0,
               }}
             >
-              {item.icon}
-            </ListItemIcon>
-            {!collapsed && (
-              <ListItemText
-                primary={item.text}
-                sx={{ cursor: "default" }}
-                primaryTypographyProps={{
-                  fontFamily: "Velyra",
-                  fontWeight: selectedOption === item.text ? "bold" : "normal",
+              <ListItemIcon
+                sx={{
+                  color: isSelected ? "#FFFFFF" : "#007BFF",
+                  justifyContent: "center",
+                  minWidth: collapsed ? "40px" : "45px",
                 }}
-              />
-            )}
-          </ListItem>
-        </Tooltip>
-      ))}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {!collapsed && (
+                <ListItemText
+                  primary={item.text}
+                  sx={{ cursor: "default" }}
+                  primaryTypographyProps={{
+                    fontFamily: "Velyra",
+                    fontWeight: isSelected ? "bold" : "normal",
+                  }}
+                />
+              )}
+            </ListItem>
+          </Tooltip>
+        );
+      })}
     </List>
   );
 
   return (
     <>
-      {/* Previous implementation remains unchanged */}
       <Box
         sx={{
           display: { xs: "none", md: "flex" },
@@ -167,7 +161,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar, selectedOption, setSelectedOption
         </Box>
       </Box>
 
-      {/* Mobile Drawer remains unchanged */}
       <Drawer
         anchor="left"
         open={isCollapsed}

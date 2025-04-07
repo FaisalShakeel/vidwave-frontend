@@ -55,7 +55,7 @@ const Search = () => {
     setLoading(true);
     setError(null); // Reset error before new request
     try {
-      const response = await axios.post("http://localhost:5000/videos/search", {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/videos/search`, {
         query: searchQuery,
         filters,
         tab: activeTab,

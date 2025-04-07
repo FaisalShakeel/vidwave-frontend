@@ -28,7 +28,7 @@ const PlaylistVideos = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:5000/playlists/get-playlist/${id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/playlists/playlist/${id}`,
         {
           headers: { Authorization: localStorage.getItem("token") },
         }
@@ -65,28 +65,33 @@ const PlaylistVideos = () => {
     <Layout>
       <Box
         sx={{
-          backgroundColor: "#F9FAFB",
+          background: "linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%)",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          padding: { xs: "16px", md: "24px" },
-          mt: { xs: 1, md: -3 },
+          padding: { xs: "12px", sm: "20px", md:"30px" },
+          paddingTop:{md:"10px"}
         }}
       >
         {/* Back Button */}
-        <Box sx={{ width: "100%", maxWidth: "1000px", mb: 2 }}>
+        <Box sx={{ width: "100%", maxWidth: "1200px", mb: 3 }}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate(-1)}
             sx={{
               fontFamily: "Velyra",
-              fontSize: "16px",
+              fontSize: "0.9rem",
               textTransform: "none",
               color: "#007BFF",
-              "&:hover": { backgroundColor: "#E7F3FF" },
-              borderRadius: "50px",
+              borderRadius: "12px",
               padding: "6px 16px",
+              backgroundColor: "rgba(0, 123, 255, 0.05)",
+              "&:hover": {
+                backgroundColor: "rgba(0, 123, 255, 0.1)",
+                boxShadow: "0 4px 12px rgba(0, 123, 255, 0.2)",
+              },
+              transition: "all 0.3s ease",
             }}
           >
             Back
@@ -102,7 +107,15 @@ const PlaylistVideos = () => {
               height: "50vh",
             }}
           >
-            <CircularProgress size={40} thickness={6} sx={{ color: "#007BFF" }} />
+            <CircularProgress
+              size={50}
+              thickness={5}
+              sx={{
+                color: "#007BFF",
+                animationDuration: "700ms",
+                boxShadow: "0 0 15px rgba(0, 123, 255, 0.3)",
+              }}
+            />
           </Box>
         ) : !playlist ? (
           <Typography
@@ -110,9 +123,10 @@ const PlaylistVideos = () => {
             sx={{
               fontFamily: "Velyra",
               textAlign: "center",
-              color: "#6C757D",
+              color: "#666",
               fontWeight: "medium",
               mt: 4,
+              fontSize: "1.1rem",
             }}
           >
             Playlist not found.
@@ -122,23 +136,28 @@ const PlaylistVideos = () => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              backgroundColor: "#FFFFFF",
+              backgroundColor: "rgba(255, 255, 255, 0.98)",
               borderRadius: "16px",
-              boxShadow: "0px 6px 20px rgba(0, 123, 255, 0.1)",
+              boxShadow: "0 6px 20px rgba(0, 123, 255, 0.15)",
               width: "100%",
-              maxWidth: "1000px",
+              maxWidth: "1200px",
               minHeight: "80vh",
               overflow: "hidden",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                boxShadow: "0 10px 30px rgba(0, 123, 255, 0.25)",
+              },
             }}
           >
             {/* Playlist Header */}
             <Box
               sx={{
-                background: "linear-gradient(135deg, #007BFF 0%, #0056B3 100%)",
+                background: "linear-gradient(135deg, #007BFF 0%, #0056b3 100%)",
                 color: "#FFFFFF",
-                padding: "24px",
+                padding: { xs: "16px", md: "24px" },
                 textAlign: "center",
                 borderRadius: "16px 16px 0 0",
+                boxShadow: "0 4px 12px rgba(0, 123, 255, 0.3)",
               }}
             >
               <Typography
@@ -146,7 +165,8 @@ const PlaylistVideos = () => {
                 sx={{
                   fontFamily: "Velyra",
                   fontWeight: "bold",
-                  fontSize: { xs: "24px", md: "32px" },
+                  fontSize: { xs: "1.5rem", md: "2rem" },
+                  textShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
                 }}
               >
                 {playlist.title}
@@ -156,7 +176,7 @@ const PlaylistVideos = () => {
                 sx={{
                   fontFamily: "Velyra",
                   mt: 1,
-                  fontSize: "16px",
+                  fontSize: { xs: "0.9rem", md: "1rem" },
                   opacity: 0.9,
                 }}
               >
@@ -168,7 +188,7 @@ const PlaylistVideos = () => {
                   fontFamily: "Velyra",
                   mt: 1,
                   fontWeight: "medium",
-                  fontSize: "14px",
+                  fontSize: { xs: "0.8rem", md: "0.85rem" },
                   opacity: 0.8,
                 }}
               >
@@ -176,25 +196,25 @@ const PlaylistVideos = () => {
               </Typography>
             </Box>
 
-            <Divider sx={{ bgcolor: "rgba(0, 123, 255, 0.2)" }} />
+            <Divider sx={{ bgcolor: "rgba(0, 123, 255, 0.15)" }} />
 
             {/* Playlist Content */}
             <Box
               sx={{
                 flex: 1,
-                padding: "24px",
+                padding: { xs: "16px", md: "24px" },
                 overflowY: "auto",
                 "&::-webkit-scrollbar": {
-                  width: "8px",
-                  borderRadius: "4px",
+                  width: "6px",
+                  borderRadius: "3px",
                 },
                 "&::-webkit-scrollbar-thumb": {
                   backgroundColor: "#007BFF",
-                  borderRadius: "4px",
+                  borderRadius: "3px",
                 },
                 "&::-webkit-scrollbar-track": {
-                  backgroundColor: "#F1F5F9",
-                  borderRadius: "4px",
+                  backgroundColor: "rgba(0, 123, 255, 0.05)",
+                  borderRadius: "3px",
                 },
               }}
             >
@@ -203,11 +223,11 @@ const PlaylistVideos = () => {
                   variant="h6"
                   sx={{
                     fontFamily: "Velyra",
-                    color: "#6C757D",
+                    color: "#666",
                     fontWeight: "medium",
                     textAlign: "center",
                     mt: 4,
-                    fontSize: "18px",
+                    fontSize: "1.1rem",
                   }}
                 >
                   No Videos in this Playlist
@@ -220,15 +240,16 @@ const PlaylistVideos = () => {
                       display: "flex",
                       alignItems: "center",
                       mb: 2,
-                      p: 2,
+                      p: 1.5,
                       borderRadius: "12px",
-                      boxShadow: "0px 4px 12px rgba(0, 123, 255, 0.1)",
+                      boxShadow: "0 4px 12px rgba(0, 123, 255, 0.1)",
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
                       transition: "all 0.3s ease",
                       cursor: "pointer",
                       "&:hover": {
                         transform: "translateY(-4px)",
-                        boxShadow: "0px 8px 24px rgba(0, 123, 255, 0.2)",
-                        backgroundColor: "#F9FAFB",
+                        boxShadow: "0 8px 24px rgba(0, 123, 255, 0.2)",
+                        backgroundColor: "rgba(255, 255, 255, 1)",
                       },
                     }}
                     onClick={() => navigate(`/watch/${video._id}`)}
@@ -237,13 +258,14 @@ const PlaylistVideos = () => {
                     <Box
                       sx={{
                         flexShrink: 0,
-                        width: { xs: "100px", md: "140px" },
-                        height: { xs: "60px", md: "80px" },
-                        backgroundImage: `url(${video.thumbnailUrl})`,
+                        width: { xs: "90px", md: "120px" },
+                        height: { xs: "50px", md: "70px" },
+                        backgroundImage: `url(${video.thumbnailUrl || "https://via.placeholder.com/120x70"})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                         borderRadius: "8px",
                         mr: 2,
+                        boxShadow: "0 2px 8px rgba(0, 123, 255, 0.15)",
                       }}
                     />
                     {/* Video Details */}
@@ -253,8 +275,8 @@ const PlaylistVideos = () => {
                         sx={{
                           fontFamily: "Velyra",
                           fontWeight: "bold",
-                          color: "#333",
-                          fontSize: { xs: "16px", md: "18px" },
+                          color: "#007BFF",
+                          fontSize: { xs: "1rem", md: "1.1rem" },
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -262,13 +284,13 @@ const PlaylistVideos = () => {
                       >
                         {video.title}
                       </Typography>
-                      <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                      <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
                         <Typography
                           variant="body2"
                           sx={{
                             fontFamily: "Velyra",
-                            color: "#6C757D",
-                            fontSize: "14px",
+                            color: "#666",
+                            fontSize: { xs: "0.8rem", md: "0.85rem" },
                           }}
                         >
                           {video.likedBy.length} Likes
@@ -277,8 +299,8 @@ const PlaylistVideos = () => {
                           variant="body2"
                           sx={{
                             fontFamily: "Velyra",
-                            color: "#6C757D",
-                            fontSize: "14px",
+                            color: "#666",
+                            fontSize: { xs: "0.8rem", md: "0.85rem" },
                           }}
                         >
                           {video.viewedBy.length} Views

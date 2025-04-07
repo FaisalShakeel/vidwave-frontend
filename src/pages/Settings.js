@@ -20,7 +20,7 @@ import { storage } from "../firebaseConfig";
 import DashboardLayout from "../components/DashboardLayout";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import ErrorDisplay from "../components/ErrorDisplay";
 
@@ -101,7 +101,7 @@ const Settings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/users/getprofile-basicinfo", {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/users/profile-info`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
@@ -110,7 +110,7 @@ const Settings = () => {
         setEmail(response.data.user.EMailAddress || "");
         setBio(response.data.user.bio || "");
       } else {
-        throw new Error("Failed to fetch profile information. Please try again later.");
+        setError("Failed to fetch profile information. Please try again later.");
       }
     } catch (e) {
       setError(e.response ? e.response.data.message : e.message || "An error occurred while fetching profile information.");
@@ -124,7 +124,7 @@ const Settings = () => {
     setIsSavingChanges(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/users/update-profile",
+        `${process.env.REACT_APP_API_BASE_URL}/users/update-profile`,
         { username, bio, profilePhotoUrl },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -144,7 +144,7 @@ const Settings = () => {
     setIsChangingPassword(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/users/change-password",
+        `${process.env.REACT_APP_API_BASE_URL}/users/change-password`,
         { currentPassword, newPassword },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
@@ -166,59 +166,173 @@ const Settings = () => {
     getProfileBasicInfo();
   }, []);
 
-  const renderLoginPrompt = () => (
+  
+const renderLoginPrompt = () => (
+  
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh", // Adjusted to match the previous full-height design
+      width: "100%",
+      background: "linear-gradient(135deg, #f5f7ff 0%, #e9f0ff 100%)", // Updated to gradient
+      padding: 0, // Removed padding to fill the screen
+      margin: 0,
+      overflow: "hidden",
+      mt: { xs: 0, md: -7 }, // Added responsive margin-top: 0 on xs, -7 on md and up
+    }}
+  >
     <Box
       sx={{
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "80vh",
-        backgroundColor: "#f8f9ff",
-        padding: 2,
+        width: "100%",
+        maxWidth: "900px", // Matching the reduced width from the previous code
+        height: "80vh",
+        borderRadius: "24px",
+        overflow: "hidden",
+        boxShadow: "0px 8px 40px rgba(0, 0, 0, 0.12)",
       }}
     >
-      <Paper
-        elevation={6}
+      {/* Left side - Branding Area */}
+      <Box
         sx={{
-          padding: 4,
-          borderRadius: "16px",
-          textAlign: "center",
-          maxWidth: "500px",
-          width: "100%",
-          backgroundColor: "#ffffff",
-          boxShadow: "0px 4px 20px rgba(0,123,255,0.1)",
+          flex: 1,
+          background: "linear-gradient(135deg, #0062E6 0%, #33A8FF 100%)",
+          display: { xs: "none", md: "flex" }, // Hidden on mobile
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 6,
+          color: "#fff",
         }}
       >
-        <LockIcon sx={{ fontSize: 60, color: "#007BFF", mb: 2 }} />
         <Typography
-          variant="h5"
-          sx={{ fontFamily: "Velyra", fontWeight: "bold", color: "#007BFF", mb: 2 }}
+          variant="h4"
+          sx={{
+            fontFamily: "Velyra",
+            fontWeight: "700",
+            mb: 2,
+            textShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
         >
-          Please Log In
+          Your Settings
         </Typography>
         <Typography
           variant="body1"
-          sx={{ fontFamily: "Velyra", color: "#666", mb: 3 }}
-        >
-          You need to be logged in to manage your settings. Sign in to update your profile!
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/login")}
           sx={{
             fontFamily: "Velyra",
-            fontWeight: "bold",
-            backgroundColor: "#007BFF",
-            borderRadius: "8px",
-            padding: "10px 20px",
-            "&:hover": { backgroundColor: "#0056b3" },
+            textAlign: "center",
+            opacity: 0.9,
+            fontSize: "1rem",
           }}
         >
-          Log In
-        </Button>
-      </Paper>
+          Sign in to manage your settings.
+        </Typography>
+      </Box>
+
+      {/* Right side - Login Container */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: 0.6 },
+          backgroundColor: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: { xs: 3, sm: 6 },
+        }}
+      >
+        <Box sx={{ maxWidth: "400px", width: "100%" }}>
+          <Box sx={{ textAlign: "center", mb: 5 }}>
+            <Box
+              sx={{
+                display: "inline-flex",
+                p: 2,
+                borderRadius: "50%",
+                backgroundColor: "rgba(0, 123, 255, 0.08)",
+                mb: 2,
+              }}
+            >
+              <LockIcon sx={{ fontSize: 28, color: "#007BFF" }} />
+            </Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "Velyra",
+                fontWeight: "700",
+                color: "#1a1a1a",
+                mb: 1,
+              }}
+            >
+              Please Log In
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: "Velyra",
+                color: "#777",
+                mb: 4,
+                fontSize: "1rem",
+              }}
+            >
+              You need to be logged in to manage your settings.
+            </Typography>
+          </Box>
+
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            onClick={() => navigate("/login")}
+            sx={{
+              fontFamily: "Velyra",
+              fontWeight: "600",
+              backgroundColor: "#007BFF",
+              borderRadius: "12px",
+              padding: "14px",
+              textTransform: "none",
+              fontSize: "1rem",
+              boxShadow: "0 4px 14px rgba(0, 123, 255, 0.3)",
+              "&:hover": {
+                backgroundColor: "#0056b3",
+                boxShadow: "0 6px 18px rgba(0, 123, 255, 0.4)",
+              },
+            }}
+          >
+            Log In
+          </Button>
+
+          <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: "Velyra",
+                color: "#777",
+                fontSize: "0.9rem",
+              }}
+            >
+              Don't have an account?{" "}
+              <Link
+                to="/create-account" // Using react-router-dom Link with 'to' prop
+                style={{
+                  fontFamily: "Velyra",
+                  color: "#007BFF",
+                  fontWeight: "700", // Bold
+                  textDecoration: "none",
+                }}
+                onMouseEnter={(e) => (e.target.style.textDecoration = "underline")}
+                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
+              >
+                Sign up
+              </Link>
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
-  );
+  </Box>
+);
 
   return (
     <DashboardLayout>

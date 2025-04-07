@@ -30,11 +30,11 @@ const HomePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/videos/get-allvideos");
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/videos/all-videos`);
       if (response.data.success) {
         setVideos(response.data.videos);
       } else {
-        throw new Error("Failed to fetch videos. Please try again later.");
+        setError("Failed to fetch videos. Please try again later.");
       }
     } catch (err) {
       setError(err.message || "An error occurred while fetching videos.");
@@ -94,7 +94,7 @@ const HomePage = () => {
 
       {/* Video Grid Section */}
       {!loading && !error && (
-        <Grid container spacing={2} sx={{ padding: 2, backgroundColor: "#fff" }}>
+        <Grid container spacing={2} sx={{ padding: 2, backgroundColor: "#fff",width:{md:"99%"} }}>
           {filteredVideos.length > 0 ? (
             filteredVideos.map((video, index) => (
               <Grid

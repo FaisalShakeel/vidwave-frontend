@@ -15,7 +15,7 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ErrorDisplay from "../components/ErrorDisplay";
@@ -60,13 +60,13 @@ const History = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get("http://localhost:5000/videos/get-watched-videos", {
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/videos/watched-videos`, {
           headers: { Authorization: localStorage.getItem("token") },
         });
         if (response.data.success) {
           setWatchedVideos(response.data.watchedVideos);
         } else {
-          throw new Error("Failed to fetch watched videos. Please try again later.");
+          setError("Failed to fetch watched videos. Please try again later.");
         }
       } catch (err) {
         setError(err.message || "An error occurred while fetching watched videos.");
@@ -81,7 +81,7 @@ const History = () => {
   const handleDeleteHistory = async () => {
     setIsDeletingHistory(true);
     try {
-      const response = await axios.delete("http://localhost:5000/videos/delete-watch-history", {
+      const response = await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/videos/delete-watch-history`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       if (response.data.success) {
@@ -99,59 +99,174 @@ const History = () => {
     }
   };
 
-  const renderLoginPrompt = () => (
+ 
+
+const renderLoginPrompt = () => (
+  
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      width: "100%",
+      background: "linear-gradient(135deg, #f5f7ff 0%, #e9f0ff 100%)",
+      padding: 0,
+      margin: 0,
+      mt:{md:-7},
+      overflow: "hidden",
+    }}
+  >
     <Box
       sx={{
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "80vh",
-        backgroundColor: "#f8f9ff",
-        padding: 2,
+        width: "100%",
+        maxWidth: "900px", // Matching the reduced width from the previous code
+        height: "80vh",
+        borderRadius: "24px",
+        overflow: "hidden",
+        boxShadow: "0px 8px 40px rgba(0, 0, 0, 0.12)",
       }}
     >
-      <Paper
-        elevation={6}
+      {/* Left side - Branding Area */}
+      <Box
         sx={{
-          padding: 4,
-          borderRadius: "16px",
-          textAlign: "center",
-          maxWidth: "500px",
-          width: "100%",
-          backgroundColor: "#ffffff",
-          boxShadow: "0px 4px 20px rgba(0,123,255,0.1)",
+          flex: 1,
+          background: "linear-gradient(135deg, #0062E6 0%, #33A8FF 100%)",
+          display: { xs: "none", md: "flex" }, // Hidden on mobile
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 6,
+          color: "#fff",
         }}
       >
-        <LockIcon sx={{ fontSize: 60, color: "#007BFF", mb: 2 }} />
         <Typography
-          variant="h5"
-          sx={{ fontFamily: "Velyra", fontWeight: "bold", color: "#007BFF", mb: 2 }}
+          variant="h4"
+          sx={{
+            fontFamily: "Velyra",
+            fontWeight: "700",
+            mb: 2,
+            textShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
         >
-          Please Log In
+          Your Watch History
         </Typography>
         <Typography
           variant="body1"
-          sx={{ fontFamily: "Velyra", color: "#666", mb: 3 }}
-        >
-          You need to be logged in to view your watch history. Sign in to see what you’ve watched!
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/login")}
           sx={{
             fontFamily: "Velyra",
-            fontWeight: "bold",
-            backgroundColor: "#007BFF",
-            borderRadius: "8px",
-            padding: "10px 20px",
-            "&:hover": { backgroundColor: "#0056b3" },
+            textAlign: "center",
+            opacity: 0.9,
+            fontSize: "1rem",
           }}
         >
-          Log In
-        </Button>
-      </Paper>
+          Sign in to see what you’ve watched and continue your video journey.
+        </Typography>
+      </Box>
+
+      {/* Right side - Login Container */}
+      <Box
+        sx={{
+          flex: { xs: 1, md: 0.6 },
+          backgroundColor: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: { xs: 3, sm: 6 },
+        }}
+      >
+        <Box sx={{ maxWidth: "400px", width: "100%" }}>
+          <Box sx={{ textAlign: "center", mb: 5 }}>
+            <Box
+              sx={{
+                display: "inline-flex",
+                p: 2,
+                borderRadius: "50%",
+                backgroundColor: "rgba(0, 123, 255, 0.08)",
+                mb: 2,
+              }}
+            >
+              <LockIcon sx={{ fontSize: 28, color: "#007BFF" }} />
+            </Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "Velyra",
+                fontWeight: "700",
+                color: "#1a1a1a",
+                mb: 1,
+              }}
+            >
+              Please Log In
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: "Velyra",
+                color: "#777",
+                mb: 4,
+                fontSize: "1rem",
+              }}
+            >
+              You need to be logged in to view your watch history.
+            </Typography>
+          </Box>
+
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            onClick={() => navigate("/login")}
+            sx={{
+              fontFamily: "Velyra",
+              fontWeight: "600",
+              backgroundColor: "#007BFF",
+              borderRadius: "12px",
+              padding: "14px",
+              textTransform: "none",
+              fontSize: "1rem",
+              boxShadow: "0 4px 14px rgba(0, 123, 255, 0.3)",
+              "&:hover": {
+                backgroundColor: "#0056b3",
+                boxShadow: "0 6px 18px rgba(0, 123, 255, 0.4)",
+              },
+            }}
+          >
+            Log In
+          </Button>
+
+          <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: "Velyra",
+                color: "#777",
+                fontSize: "0.9rem",
+              }}
+            >
+              Don't have an account?{" "}
+              <Link
+              
+                style={{
+                  fontFamily: "Velyra",
+                  color: "#007BFF",
+                  fontWeight: "bold", // Bold
+                  textDecoration: "none",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              to="/create-account"
+              >
+                Sign up
+              </Link>
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
-  );
+  </Box>
+);
 
   return (
     <Layout>
@@ -174,6 +289,8 @@ const History = () => {
               sx={{
                 fontFamily: "Velyra",
                 fontSize: "16px",
+                mt:2,
+                borderRadius:"50px",
                 textTransform: "capitalize",
                 backgroundColor: "#007BFF",
                 color: "#fff",

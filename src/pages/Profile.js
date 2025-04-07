@@ -48,7 +48,7 @@ const Profile = () => {
     setIsSubscribing(true);
     try {
       const response = await axios.post(
-        "http://localhost:5000/users/follow",
+        `${process.env.REACT_APP_API_BASE_URL}/users/follow`,
         { followingId: user._id },
         { headers: { Authorization: token } }
       );
@@ -82,7 +82,7 @@ const Profile = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/users/getprofile/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/users/profile/${id}`);
       if (response.data.success) {
         setUser(response.data.user);
         setVideos(response.data.videos);

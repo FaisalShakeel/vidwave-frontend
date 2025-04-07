@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -24,52 +24,21 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { useSearchQuery } from "../contexts/SearchQueryContext";
-import { jwtDecode } from "jwt-decode";
+import { useAuth } from "../contexts/AuthContext"; // Import the useAuth hook
 
 const Navbar = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate = useNavigate();
-  const [decodedUser, setDecodedUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { searchQuery, setSearchQuery } = useSearchQuery();
+  const { isAuthenticated, decodedUser, logout } = useAuth(); // Use AuthContext
   const theme = useTheme();
   const isXsScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const isSmScreen = useMediaQuery(theme.breakpoints.between("sm", "md"));
-
-  // Check authentication status on mount and when token changes
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-        if (decodedToken.exp < currentTime) {
-          setIsAuthenticated(false);
-          setDecodedUser(null);
-          localStorage.removeItem("token");
-        } else {
-          setDecodedUser(decodedToken);
-          setIsAuthenticated(true);
-        }
-      } catch (e) {
-        console.error("Error decoding token:", e);
-        setIsAuthenticated(false);
-        setDecodedUser(null);
-        localStorage.removeItem("token");
-      }
-    } else {
-      setIsAuthenticated(false);
-      setDecodedUser(null);
-    }
-  }, []); // Removed token from dependency array to prevent re-checking on every render
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false);
-    setDecodedUser(null);
+    logout(); // Use the logout function from AuthContext
     navigate("/login");
     handleMenuClose();
   };
@@ -83,23 +52,24 @@ const Navbar = ({ toggleSidebar }) => {
         zIndex: 1200,
         padding: { xs: "0 8px", sm: "0 16px" },
         borderRadius: 0,
+        width: "100%",
       }}
     >
-      <Toolbar 
-        sx={{ 
-          justifyContent: "space-between", 
+      <Toolbar
+        sx={{
+          justifyContent: "space-between",
           minHeight: { xs: 60, sm: 70, md: 80 },
-          padding: { xs: '0 4px', sm: '0 8px', md: '0 16px' }
+          padding: { xs: "0 4px", sm: "0 8px", md: "0 16px" },
         }}
       >
         <IconButton
           edge="start"
           color="primary"
           onClick={toggleSidebar}
-          sx={{ 
+          sx={{
             marginRight: { xs: 0.5, sm: 1 },
-            padding: { xs: 0.5, sm: 0.75 }, 
-            display: { md: "none" } 
+            padding: { xs: 0.5, sm: 0.75 },
+            display: { md: "none" },
           }}
         >
           <MenuIcon sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }} />
@@ -115,7 +85,7 @@ const Navbar = ({ toggleSidebar }) => {
               fontSize: { xs: "1rem", sm: "1.1rem", md: "1.25rem" },
               flexGrow: { xs: 0, md: 0 },
               display: { xs: "flex", md: "flex" },
-              marginRight: { xs: 1, sm: 2 }
+              marginRight: { xs: 1, sm: 2 },
             }}
           >
             Vidwave
@@ -184,11 +154,11 @@ const Navbar = ({ toggleSidebar }) => {
 
           {isAuthenticated ? (
             <>
-              <IconButton 
+              <IconButton
                 onClick={handleMenuOpen}
-                sx={{ 
+                sx={{
                   padding: { xs: 0.5, sm: 0.75 },
-                  transition: "all 0.2s ease"
+                  transition: "all 0.2s ease",
                 }}
               >
                 <Avatar
@@ -209,8 +179,8 @@ const Navbar = ({ toggleSidebar }) => {
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
                 disableScrollLock
                 sx={{
                   mt: 1.5,
@@ -240,13 +210,12 @@ const Navbar = ({ toggleSidebar }) => {
                   },
                 }}
               >
-                {/* Enhanced Profile Header */}
-                <Box 
+                <Box
                   sx={{
                     background: "linear-gradient(135deg, #007BFF 0%, #007BFF 100%)",
                     borderTopLeftRadius: "20px",
                     borderTopRightRadius: "20px",
-                    padding: { xs: '20px 24px', sm: '24px 28px' },
+                    padding: { xs: "20px 24px", sm: "24px 28px" },
                     position: "relative",
                     color: "white",
                     display: "flex",
@@ -277,34 +246,33 @@ const Navbar = ({ toggleSidebar }) => {
                       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
                     }}
                   />
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                      fontWeight: 700, 
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                      fontWeight: 700,
                       fontFamily: "Velyra, sans-serif",
                       letterSpacing: "0.5px",
                       mb: 0.5,
                       textShadow: "0 2px 4px rgba(0,0,0,0.2)",
                     }}
                   >
-                    {decodedUser?.name || 'User'}
+                    {decodedUser?.name || "User"}
                   </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    sx={{
                       fontFamily: "Velyra, sans-serif",
-                      fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                      fontSize: { xs: "0.8rem", sm: "0.85rem" },
                       opacity: 0.9,
                       maxWidth: "80%",
                       wordBreak: "break-word",
                     }}
                   >
-                    {decodedUser?.email || 'user@example.com'}
+                    {decodedUser?.EMailAddress || "user@example.com"}
                   </Typography>
                 </Box>
 
-                {/* Enhanced Menu Items */}
                 <Box sx={{ padding: "16px 0", background: "#ffffff" }}>
                   <MenuItem
                     onClick={() => {
@@ -314,11 +282,10 @@ const Navbar = ({ toggleSidebar }) => {
                     sx={{
                       fontFamily: "Velyra, sans-serif",
                       color: "#007BFF",
-                      padding: { xs: '12px 24px', sm: '14px 28px' },
-                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      padding: { xs: "12px 24px", sm: "14px 28px" },
+                      fontSize: { xs: "0.9rem", sm: "0.95rem" },
                       "&:hover": {
                         background: "#F0F7FF",
-                      
                       },
                       transition: "all 0.3s ease",
                     }}
@@ -329,16 +296,16 @@ const Navbar = ({ toggleSidebar }) => {
                         color: "inherit",
                       }}
                     >
-                      <AccountCircle sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                      <AccountCircle sx={{ fontSize: { xs: "1.3rem", sm: "1.4rem" } }} />
                     </ListItemIcon>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                       <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
                         My Profile
                       </Typography>
-                      <Typography 
+                      <Typography
                         sx={{
                           fontFamily: "Velyra",
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           color: "#668CFF",
                         }}
                       >
@@ -355,11 +322,10 @@ const Navbar = ({ toggleSidebar }) => {
                     sx={{
                       fontFamily: "Velyra, sans-serif",
                       color: "#007BFF",
-                      padding: { xs: '12px 24px', sm: '14px 28px' },
-                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      padding: { xs: "12px 24px", sm: "14px 28px" },
+                      fontSize: { xs: "0.9rem", sm: "0.95rem" },
                       "&:hover": {
                         background: "#F0F7FF",
-                        
                       },
                       transition: "all 0.3s ease",
                     }}
@@ -370,16 +336,16 @@ const Navbar = ({ toggleSidebar }) => {
                         color: "inherit",
                       }}
                     >
-                      <VideoLibrary sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                      <VideoLibrary sx={{ fontSize: { xs: "1.3rem", sm: "1.4rem" } }} />
                     </ListItemIcon>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                       <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
                         Creator Studio
                       </Typography>
-                      <Typography 
+                      <Typography
                         sx={{
                           fontFamily: "Velyra",
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           color: "#668CFF",
                         }}
                       >
@@ -395,8 +361,8 @@ const Navbar = ({ toggleSidebar }) => {
                     sx={{
                       fontFamily: "Velyra, sans-serif",
                       color: "#FF3333",
-                      padding: { xs: '12px 24px', sm: '14px 28px' },
-                      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                      padding: { xs: "12px 24px", sm: "14px 28px" },
+                      fontSize: { xs: "0.9rem", sm: "0.95rem" },
                       "&:hover": {
                         background: "#FFF0F0",
                         color: "#CC0000",
@@ -410,16 +376,16 @@ const Navbar = ({ toggleSidebar }) => {
                         color: "inherit",
                       }}
                     >
-                      <Logout sx={{ fontSize: { xs: '1.3rem', sm: '1.4rem' } }} />
+                      <Logout sx={{ fontSize: { xs: "1.3rem", sm: "1.4rem" } }} />
                     </ListItemIcon>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                       <Typography sx={{ fontWeight: 600, fontFamily: "Velyra" }}>
                         Sign Out
                       </Typography>
-                      <Typography 
+                      <Typography
                         sx={{
                           fontFamily: "Velyra",
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           color: "#FF6666",
                         }}
                       >
@@ -439,8 +405,8 @@ const Navbar = ({ toggleSidebar }) => {
                 borderRadius: "20px",
                 textTransform: "none",
                 fontFamily: "Velyra, sans-serif",
-                padding: { xs: '4px 12px', sm: '6px 20px' },
-                fontSize: { xs: '0.8rem', sm: '0.9rem', md: '0.95rem' },
+                padding: { xs: "4px 12px", sm: "6px 20px" },
+                fontSize: { xs: "0.8rem", sm: "0.9rem", md: "0.95rem" },
                 "&:hover": {
                   backgroundColor: "#0066CC",
                 },

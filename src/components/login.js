@@ -1,16 +1,41 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Snackbar, Alert, CircularProgress } from "@mui/material";
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  Typography, 
+  Snackbar, 
+  Alert, 
+  CircularProgress, 
+  InputAdornment,
+  IconButton,
+  Divider,
+  Paper,
+  Fade
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { 
+  Visibility, 
+  VisibilityOff, 
+  Email, 
+  Lock,
+  ArrowForward
+} from "@mui/icons-material";
 import axios from "axios";
+import CustomSnackbar from "./CustomSnackbar";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
-  const navigate=useNavigate()
+  const {login} = useAuth()
+  const navigate = useNavigate();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
   const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
+  const handleClickShowPassword = () => setShowPassword(!showPassword);
 
   const handleLogin = async () => {
     if (!emailAddress || !password) {
@@ -19,122 +44,208 @@ function Login() {
     }
 
     setLoading(true);
+    console.log("API URL",process.env.REACT_APP_API_URL)
 
     try {
-      const response = await axios.post("http://127.0.0.1:5000/users/login", { EMailAddress:emailAddress, passWord: password });
-      console.log("Response from backend",response.data)
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/users/login`, { 
+        EMailAddress: emailAddress, 
+        passWord: password 
+      });
 
       if (response.data.success) {
-        console.log("Storing token")
-        localStorage.setItem("token",response.data.token)
-        setSnackbar({ open: true, message: "You are successfully logged in", severity: "success" });
-        setTimeout(()=>{
-        navigate("/") // Redirect after successful login
-
-        },1500)
-      } else if(response.data.success==false &&response.data.message=="Incorrect Password") {
-        setSnackbar({ open: true, message: "Incorrect Password", severity: "error" });
-      }
-      else if(response.data.success==false &&response.data.message=="NotRegistered") {
-        setSnackbar({ open: true, message: "Not Registered!", severity: "error" });
-
-
+        login(response.data.token)
+        localStorage.setItem("token", response.data.token);
+        setSnackbar({ open: true, message: "Login successful!", severity: "success" });
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else if (response.data.success == false && response.data.message == "Incorrect Password") {
+        setSnackbar({ open: true, message: "Incorrect password", severity: "error" });
+      } else if (response.data.success == false && response.data.message == "NotRegistered") {
+        setSnackbar({ open: true, message: "Account not found", severity: "error" });
       }
     } catch (error) {
-      setSnackbar({ open: true, message: "Error occurred during login", severity: "error" });
+      setSnackbar({ open: true, message: "Connection error", severity: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: "400px",
-        margin: "auto",
-        padding: "30px",
-        height: "610px", // Fixed height
-        display: "flex", // Flexbox layout
-        flexDirection: "column", // Stack the children vertically
-        justifyContent: "space-between", // Distribute space between elements
-        boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.15)",
-        borderRadius: "16px",
-        backgroundColor: "#fff",
-        fontFamily: "Velyra, Arial, sans-serif",
-        textAlign: "center",
-      }}
-    >
-      <Typography
-        variant="h4"
+    <Fade in={true} timeout={800}>
+      <Paper
+        elevation={6}
         sx={{
-          fontFamily: "Velyra",
-          marginBottom: "20px",
+          maxWidth: "380px",
+          margin: "auto",
+          padding: "24px",
+          height: "480px", // Reduced height
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          borderRadius: "20px",
+          backgroundColor: "#fff",
+          fontFamily: "Velyra, Arial, sans-serif",
+          textAlign: "center",
+          overflow: "hidden",
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "4px",
+            background: "linear-gradient(90deg, #007BFF, #00C6FF)",
+          }
         }}
       >
-        Log In
-      </Typography>
+        <Box>
+          <Typography
+            variant="h5" // Reduced from h4
+            sx={{
+              fontFamily: "Velyra",
+              fontWeight: 600,
+              marginBottom: "8px",
+              background: "linear-gradient(45deg, #007BFF, #00C6FF)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              letterSpacing: "0.5px"
+            }}
+          >
+            Welcome Back
+          </Typography>
+          
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              fontFamily: "Velyra",
+              fontSize: "0.875rem",
+              marginBottom: "16px",
+            }}
+          >
+            Sign in to continue to Vidwave
+          </Typography>
+        </Box>
 
-      {/* Input Fields */}
-      <Box sx={{ flexGrow: 1 }}> {/* Allows the form to grow within available space */}
-        <TextField
-          fullWidth
-          label="Email Address"
-          variant="standard"
-          margin="normal"
-          InputProps={{ style: { fontFamily: "Velyra" } }}
-          InputLabelProps={{ style: { fontFamily: "Velyra" } }}
-          onChange={(e) => setEmailAddress(e.target.value)}
-        />
+        {/* Input Fields */}
+        <Box sx={{ width: "100%" }}>
+          <TextField
+            fullWidth
+            label="Email Address"
+            variant="outlined"
+            size="small"
+            margin="normal"
+            InputProps={{ 
+              style: { fontFamily: "Velyra", fontSize: "0.9rem" },
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Email fontSize="small" color="primary" />
+                </InputAdornment>
+              ),
+            }}
+            InputLabelProps={{ style: { fontFamily: "Velyra", fontSize: "0.9rem" } }}
+            onChange={(e) => setEmailAddress(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            variant="outlined"
+            size="small"
+            margin="normal"
+            InputProps={{ 
+              style: { fontFamily: "Velyra", fontSize: "0.9rem" },
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Lock fontSize="small" color="primary" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={handleClickShowPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            InputLabelProps={{ style: { fontFamily: "Velyra", fontSize: "0.9rem" } }}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{ mb: 1 }}
+          />
+          
+          
+        </Box>
+
+        {/* Login Button */}
+        <Box>
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{
+              fontFamily: "Velyra",
+              padding: "10px 0",
+              borderRadius: "10px",
+              textTransform: "none",
+              fontSize: "0.95rem",
+              fontWeight: 600,
+              boxShadow: "0 4px 10px rgba(0, 123, 255, 0.25)",
+              background: "linear-gradient(45deg, #007BFF, #00C6FF)",
+              position: "relative",
+              overflow: "hidden",
+              transition: "all 0.3s",
+              "&:hover": {
+                boxShadow: "0 6px 15px rgba(0, 123, 255, 0.35)",
+                transform: "translateY(-2px)",
+              },
+            }}
+            onClick={handleLogin}
+            disabled={loading}
+            endIcon={loading ? null : <ArrowForward />}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+          </Button>
+
+          <Divider sx={{ my: 3, opacity: 0.7 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: "Velyra", px: 1 }}>
+              OR
+            </Typography>
+          </Divider>
+
+          {/* Link to Sign Up */}
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: "Velyra",
+              fontSize: "0.85rem",
+              color: "text.secondary",
+            }}
+          >
+            Don't have an account?{" "}
+            <Link 
+              to="/create-account" 
+              style={{ 
+                textDecoration: "none", 
+                color: "#007BFF",
+                fontWeight: 600,
+              }}
+            >
+              Create Account
+            </Link>
+          </Typography>
+        </Box>
+        <CustomSnackbar open={snackbar.open} message={snackbar.message} severity={snackbar.severity} onClose={handleSnackbarClose}/>
+
         
-        <TextField
-          fullWidth
-          label="Password"
-          type="password"
-          variant="standard"
-          margin="normal"
-          InputProps={{ style: { fontFamily: "Velyra" } }}
-          InputLabelProps={{ style: { fontFamily: "Velyra" } }}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      
-      </Box>
-
-      {/* Login Button */}
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{
-          fontFamily: "Velyra",
-          marginTop: "20px",
-          padding: "10px 0",
-        }}
-        onClick={handleLogin}
-        disabled={loading}
-      >
-        {loading ? <CircularProgress size={24} color="inherit" /> : "Log In"}
-      </Button>
-
-      {/* Link to Sign Up */}
-      <Typography
-        variant="body2"
-        sx={{
-          fontFamily: "Velyra",
-          marginTop: "10px",
-        }}
-      >
-        Don't have an account?{" "}
-        <Link to="/createaccount" style={{ textDecoration: "none", color: "#1976d2" }}>
-          Create Account
-        </Link>
-      </Typography>
-
-      {/* Snackbar for Error/Success messages */}
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleSnackbarClose}>
-        <Alert severity={snackbar.severity} onClose={handleSnackbarClose}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      </Paper>
+    </Fade>
   );
 }
 

@@ -184,7 +184,7 @@ const EditVideo = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`http://localhost:5000/videos/getvideo/${id}?token=${localStorage.getItem("token")}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/videos/video-details/${id}?token=${localStorage.getItem("token")}`);
       if (response.data.success) {
         setVideoTitle(response.data.video.title);
         setVideoCategory(response.data.video.category);
@@ -193,7 +193,7 @@ const EditVideo = () => {
         setVideoURL(response.data.video.url);
         setThumbnailURL(response.data.video.thumbnailUrl);
       } else {
-        throw new Error(response.data.message || "Failed to fetch video details.");
+        setError(response.data.message || "Failed to fetch video details.");
       }
     } catch (e) {
       setError(e.response ? e.response.data.message : e.message || "An error occurred while fetching video details.");
@@ -226,7 +226,7 @@ const EditVideo = () => {
     setUploading(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/videos/update-video",
+        `${process.env.REACT_APP_API_BASE_URL}/videos/update-video`,
         {
           videoId: id,
           title: videoTitle,
